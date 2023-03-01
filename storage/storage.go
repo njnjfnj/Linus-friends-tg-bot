@@ -1,14 +1,17 @@
 package storage
 
 import (
-	usr "LinusFriends/User"
+	LinusUser "LinusFriends/user"
+	"errors"
 )
 
+var ErrNoSavedPages = errors.New("no saved pages")
+
 type Storage interface {
-	AddNewUser(u usr.User) error
+	AddNewUser(u LinusUser.User) error
 	DeleteUser(chat_id int) error
-	IsUserExists(u usr.User) (bool, error)
-	GetUser(chat_id int) (usr.User, error)
-	UpdateUser(u usr.User) error
-	GetRandomUser() error
+	IsUserExists(chat_id int) (bool, error)
+	GetUser(chat_id int) (LinusUser.User, error)
+	UpdateUser(u LinusUser.User) error
+	GetRandomUser() (LinusUser.User, error)
 }
