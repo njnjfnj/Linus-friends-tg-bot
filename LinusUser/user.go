@@ -1,4 +1,4 @@
-package user
+package LinusUser
 
 type TheCommandID int
 type Img []byte
@@ -7,13 +7,10 @@ type User struct {
 	ChatID             int
 	Name               string
 	Description        string
-	Skills             string
+	SkillsString       string
+	SkillsMap          map[string]bool
 	YearsOfProgramming int
-
-	LastCommand TheCommandID
-	IsImportant bool
-
-	Image Img
+	Image              Img
 }
 
 const (

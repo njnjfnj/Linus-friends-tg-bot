@@ -1,7 +1,7 @@
 package storage
 
 import (
-	LinusUser "LinusFriends/user"
+	"LinusFriends/LinusUser"
 	"errors"
 )
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"strings"
@@ -29,9 +30,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Can not make a db: ", err)
 	}
-	// if err := db.Init(context.TODO()); err != nil { когда будешь работать с бд тогда и раскоменть
-	// 	log.Fatal("Can not init a db: ", err)
-	// }
+	if err := db.Init(context.TODO()); err != nil {
+		log.Fatal("Can not init a db: ", err)
+	}
 
 	// bot init
 	bot, err := tgbotapi.NewBotAPI(*token)
@@ -45,31 +46,32 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	// creating processing object
-	process := processing.NewProcessing(bot, db)
+	UsersInProcess := make(map[int]chan tgbotapi.Update)
 
+	// creating processing object
 	// cheking updates
 	updates := bot.GetUpdatesChan(u)
-	for update := range updates {
-		if update.Message != nil {
-			var err error
-			chat_id := update.FromChat().ChatConfig().ChatID
-			if len(update.Message.Text) != 0 {
-				if update.Message.Text[0] == '/' {
-					err = process.CMD(strings.ReplaceAll(update.Message.Text, " ", ""), chat_id)
+	process := processing.NewProcessing(bot, db)
+	for upd := range updates {
+		go func(update tgbotapi.Update) {
+			if update.Message != nil {
+				chat_id := update.FromChat().ChatConfig().ChatID
+				if UsersInProcess[int(chat_id)] == nil {
+					if len(update.Message.Text) != 0 && update.Message.Text[0] == '/' {
+						UsersInProcess[int(chat_id)] = make(chan tgbotapi.Update)
+						if err := process.CMD(strings.ReplaceAll(update.Message.Text, " ", ""), chat_id, UsersInProcess[int(chat_id)]); err != nil {
+							log.Println("Can not process update: ", err)
+						}
+						close(UsersInProcess[int(chat_id)])
+						UsersInProcess[int(chat_id)] = nil
+					} else {
+						bot.Send(tgbotapi.NewMessage(chat_id, "Unknown message"))
+						return
+					}
 				} else {
-					err = process.Text(update.Message.Text, chat_id)
+					UsersInProcess[int(chat_id)] <- upd
 				}
-			} else if update.Message.Photo != nil {
-				err = process.Photo(update.Message.Photo, chat_id)
-			} else if _, err := bot.Send(tgbotapi.NewMessage(chat_id, "Unknown message")); err != nil {
-				log.Print("Can not send message to the ", chat_id, ": ", err)
-				continue
 			}
-
-			if err != nil {
-				log.Println("Can not process update: ", err)
-			}
-		}
+		}(upd)
 	}
 }
