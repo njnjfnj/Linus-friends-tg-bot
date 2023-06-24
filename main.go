@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	_ "flag"
 	"log"
 	"strings"
 
@@ -25,8 +26,11 @@ func main() {
 		log.Fatal("token is not specified")
 	}
 
-	// creating db
-	db, err := Database.NewDatabase("db/storage.db")
+	//for debug
+
+	// creating db настрой сиквел сервер, придурок
+	// потом, нет времени
+	db, err := Database.NewDatabase("db/storage.db") //username:password@tcp(127.0.0.1:3306)/
 	if err != nil {
 		log.Fatal("Can not make a db: ", err)
 	}
@@ -35,7 +39,7 @@ func main() {
 	}
 
 	// bot init
-	bot, err := tgbotapi.NewBotAPI(*token)
+	bot, err := tgbotapi.NewBotAPI(*token) // *token
 	if err != nil {
 		log.Panic(err)
 	}

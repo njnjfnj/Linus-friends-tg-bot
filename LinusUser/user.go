@@ -1,26 +1,23 @@
 package LinusUser
 
-type TheCommandID int
-type Img []byte
-
 type User struct {
 	ChatID             int
 	Name               string
 	Description        string
 	SkillsString       string
-	SkillsMap          map[string]bool
 	YearsOfProgramming int
-	Image              Img
+	Image              []byte
 }
 
-const (
-	CmdStart = iota
-	CmdMyProfile
-	CmdChangeProfile
-	CmdChangeProfilePhoto
-	CmdChangeProfileText
-	CmdChangeProfileName
-	CmdSearching
-	CmdShowMatches
-	CmdStopShowingMyProfile
-)
+// const (
+// 	CmdStart = iota
+// 	CmdMyProfile
+// 	CmdChangeProfile
+// 	CmdChangeProfilePhoto
+// 	CmdChangeProfileText
+// 	CmdChangeProfileName
+// 	CmdSearching
+// 	CmdShowMatches
+// 	CmdStopShowingMyProfile
+// )
+//SkillsMap          map[string]bool

@@ -70,11 +70,11 @@ func (p *Processing) processCMDStart(chat_id int64, updates chan tgbotapi.Update
 
 					buf := strings.ToLower(upd.Message.Text)
 
-					newUser.SkillsMap = make(map[string]bool)
+					//newUser.SkillsMap = make(map[string]bool)
 					newUser.SkillsString = buf
-					for _, i := range strings.Split(buf, " ") {
-						newUser.SkillsMap[i] = true
-					}
+					// for _, i := range strings.Split(buf, " ") {
+					// 	newUser.SkillsMap[i] = true
+					// }
 
 					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeYearsPfProgramming))
 					position++

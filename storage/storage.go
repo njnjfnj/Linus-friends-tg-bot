@@ -5,7 +5,14 @@ import (
 	"errors"
 )
 
-var ErrNoSavedPages = errors.New("no saved pages")
+var ErrNoFriends = errors.New("no friends :(")
+
+const (
+	SearchingByExperience = iota
+	SearchingByRandom
+	SearchingByLanguage
+	SearchingByLanguagesAndExpirience
+)
 
 type Storage interface {
 	AddNewUser(u LinusUser.User) error
@@ -13,5 +20,5 @@ type Storage interface {
 	IsUserExists(chat_id int) (bool, error)
 	GetUser(chat_id int) (LinusUser.User, error)
 	UpdateUser(u LinusUser.User) error
-	GetRandomUser() (LinusUser.User, error)
+	GetRandomUserForUser(chat_id int64, SearchingByWhat int, user LinusUser.User) (LinusUser.User, error)
 }

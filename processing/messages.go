@@ -6,6 +6,16 @@ const MessageShowMenu = `1 - Search for programmers
 2 - Show my profile
 3 - Show matches`
 
+const MessageSearchForProgrammersMenu = `1 - searching by experience
+2 - searching by language
+3 - searching by language and experience
+4 - searching by random
+5 - exit`
+
+const MessageIntaractionWithFriend = `1 - Match
+2 - next
+4 - stop searching`
+
 const MessageChangeProfile = `1 - change profile photo
 2 - change name
 3 - change experience
