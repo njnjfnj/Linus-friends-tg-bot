@@ -92,7 +92,6 @@ func (d *Database) IsUserExists(chat_id int) (bool, error) {
 
 func (d *Database) GetUser(chat_id int) (LinusUser.User, error) {
 	var res LinusUser.User
-
 	q := `SELECT * FROM db WHERE chat_id = ?`
 	err := d.db.QueryRowContext(d.cntxt, q, chat_id).Scan(
 		&res.ChatID,
@@ -126,13 +125,14 @@ func (d *Database) UpdateUser(u LinusUser.User) error {
 	return nil
 }
 
-func (d *Database) GetRandomUserForUser(chat_id int64, SearchByWhat int, user LinusUser.User) (LinusUser.User, error) {
+func (d *Database) GetRandomUserForUser(chat_id int64, SearchByWhat int, user LinusUser.User) (LinusUser.User, string, error) {
 	var res LinusUser.User
+	var ids = ""
 	var err error
 	switch SearchByWhat {
 	case storage.SearchingByExperience:
-		q := `SELECT * FROM db WHERE years_of_programming = ? `
-		err = d.db.QueryRowContext(d.cntxt, q, user.YearsOfProgramming).Scan(
+		q := `SELECT * FROM db WHERE years_of_programming = ? EXCEPT SELECT * FROM db WHERE chat_id = ?`
+		err = d.db.QueryRowContext(d.cntxt, q, user.YearsOfProgramming, chat_id).Scan(
 			&res.ChatID,
 			&res.Name,
 			&res.Description,
@@ -140,8 +140,8 @@ func (d *Database) GetRandomUserForUser(chat_id int64, SearchByWhat int, user Li
 			&res.YearsOfProgramming,
 			&res.Image)
 	case storage.SearchingByRandom:
-		q := `SELECT * FROM db ORDER BY RANDOM() LIMIT 1`
-		err = d.db.QueryRowContext(d.cntxt, q, user.YearsOfProgramming).Scan(
+		q := `SELECT * FROM (SELECT * FROM db  EXCEPT SELECT * FROM db WHERE chat_id = ?) ORDER BY RANDOM() LIMIT 1`
+		err = d.db.QueryRowContext(d.cntxt, q, chat_id).Scan(
 			&res.ChatID,
 			&res.Name,
 			&res.Description,
@@ -149,16 +149,23 @@ func (d *Database) GetRandomUserForUser(chat_id int64, SearchByWhat int, user Li
 			&res.YearsOfProgramming,
 			&res.Image)
 	case storage.SearchingByLanguage:
-
-	case storage.SearchingByLanguagesAndExpirience:
-
+		q := `SELECT IDs FROM skls WHERE language = ?`
+		var temp string
+		for _, i := range strings.Split(user.SkillsString, " ") {
+			err = d.db.QueryRowContext(d.cntxt, q, i).Scan(&temp)
+			if err != nil {
+				break
+			}
+			ids += temp + " "
+		}
 	}
+
 	if err == sql.ErrNoRows {
-		return LinusUser.User{}, storage.ErrNoFriends
+		return LinusUser.User{}, "", storage.ErrNoFriends
 	}
 	if err != nil {
-		return LinusUser.User{}, e.Wrap("Can not get random user", err)
+		return LinusUser.User{}, "", e.Wrap("Can not get random user", err)
 	}
 
-	return res, nil
+	return res, ids, nil
 }

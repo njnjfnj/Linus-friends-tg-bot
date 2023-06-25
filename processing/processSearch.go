@@ -3,7 +3,10 @@ package processing
 import (
 	"LinusFriends/LinusUser"
 	"LinusFriends/storage"
+	"math/rand"
 	"strconv"
+	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -26,17 +29,12 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 					searchingByWhat = storage.SearchingByExperience
 					break getRespondLoop1
 				case 2:
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "This option is currently under development"))
-					continue
-					//searchingByWhat = storage.SearchingByLanguage
+					searchingByWhat = storage.SearchingByLanguage
+					break getRespondLoop1
 				case 3:
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "This option is currently under development"))
-					continue
-					//searchingByWhat = storage.SearchingByLanguagesAndExpirience
-				case 4:
 					searchingByWhat = storage.SearchingByRandom
 					break getRespondLoop1
-				case 5:
+				case 4:
 					return
 				default:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
@@ -46,11 +44,11 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			}
 		}
 	getRespondLoop2:
-		for true {
-			friend, err := p.db.GetRandomUserForUser(chat_id, searchingByWhat, user)
+		for {
+			friend, ids, err := p.db.GetRandomUserForUser(chat_id, searchingByWhat, user)
 			if err == storage.ErrNoFriends {
 				p.bot.Send(tgbotapi.NewMessage(chat_id, "No friends have found\n🥲😅😂🤣🤣😓😪😭😭😭😭😭\nTry another searching method or try again later"))
-				continue
+				break
 			} else if err != nil {
 				countOfErrors++
 				p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR: can not get user\n"+err.Error()))
@@ -65,29 +63,93 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 					countOfErrors, countOfHits = 0, 0
 				}
 			}
-			p.showProfile(friend)
-			p.bot.Send(tgbotapi.NewMessage(chat_id, MessageIntaractionWithFriend))
-		getRespondLoop3:
-			for upd := range updates {
-				if upd.Message != nil && len(upd.Message.Text) == 1 {
-					check, err := strconv.Atoi(upd.Message.Text)
-					if err != nil {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-						continue
-					}
-					switch check {
-					case 1:
-						break getRespondLoop3
-					case 2:
-						break getRespondLoop3
-					case 4:
-						break getRespondLoop2
-					default:
+			if ids == "" {
+				p.showProfile(chat_id, friend)
+				p.bot.Send(tgbotapi.NewMessage(chat_id, MessageIntaractionWithFriend))
+			getRespondLoop3:
+				for upd := range updates {
+					if upd.Message != nil && len(upd.Message.Text) == 1 {
+						check, err := strconv.Atoi(upd.Message.Text)
+						if err != nil {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
+							continue
+						}
+						switch check {
+						case 1:
+							break getRespondLoop3
+						case 2:
+							break getRespondLoop3
+						case 4:
+							break getRespondLoop2
+						default:
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
+						}
+					} else {
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 					}
-				} else {
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 				}
+			} else {
+				p.bot.Send(tgbotapi.NewMessage(chat_id, "A new package of users that know the same programming languages as you has been taken"))
+				r := rand.New(rand.NewSource(time.Now().UnixNano()))
+				idsArr := strings.Split(ids, " ")
+				l := len(idsArr)
+				idsArr = idsArr[:l-1]
+				l--
+				seenFriends := make(map[int]bool)
+				for l != 0 {
+					i := r.Intn(l)
+					id, _ := strconv.Atoi(idsArr[i])
+					if id == user.ChatID || seenFriends[id] {
+						idsArr = append(idsArr[:i], idsArr[i+1:]...)
+						l--
+						continue
+					}
+					friend, err = p.db.GetUser(id)
+					if err != nil {
+						countOfErrors++
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR: can not get user\n"+err.Error()))
+						if countOfErrors > 6 {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "Please, try again later"))
+							return
+						}
+						continue
+					} else if countOfErrors != 0 {
+						countOfHits++
+						if countOfHits > 2 {
+							countOfErrors, countOfHits = 0, 0
+						}
+					}
+					p.showProfile(chat_id, friend)
+					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageIntaractionWithFriend))
+				getRespondLoop4:
+					for upd := range updates {
+						if upd.Message != nil && len(upd.Message.Text) == 1 {
+							check, err := strconv.Atoi(upd.Message.Text)
+							if err != nil {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
+								continue
+							}
+							switch check {
+							case 1:
+								break getRespondLoop4
+							case 2:
+								break getRespondLoop4
+							case 4:
+								break getRespondLoop2
+							default:
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
+							}
+						} else {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
+						}
+					}
+
+					idsArr = append(idsArr[:i], idsArr[i+1:]...)
+					l--
+					seenFriends[id] = true
+				}
+				p.bot.Send(tgbotapi.NewMessage(chat_id, "There are no friends anymore, you can start this searching method again to find more friends"))
+				break getRespondLoop2
 			}
 		}
 		searchingByWhat = -1

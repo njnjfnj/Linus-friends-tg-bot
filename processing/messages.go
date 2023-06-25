@@ -8,9 +8,8 @@ const MessageShowMenu = `1 - Search for programmers
 
 const MessageSearchForProgrammersMenu = `1 - searching by experience
 2 - searching by language
-3 - searching by language and experience
-4 - searching by random
-5 - exit`
+3 - searching by random
+4 - exit`
 
 const MessageIntaractionWithFriend = `1 - Match
 2 - next

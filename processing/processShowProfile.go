@@ -9,8 +9,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (p *Processing) showProfile(user LinusUser.User) {
-	profile := tgbotapi.NewPhoto(int64(user.ChatID), tgbotapi.FileBytes{
+func (p *Processing) showProfile(target_id int64, user LinusUser.User) {
+	profile := tgbotapi.NewPhoto(target_id, tgbotapi.FileBytes{
 		Bytes: user.Image,
 	})
 
@@ -19,12 +19,15 @@ func (p *Processing) showProfile(user LinusUser.User) {
 		"\nProgramming experience: " + fmt.Sprintf("%f years\n", user.YearsOfProgramming) +
 		user.Description + "\n"
 
-	p.bot.Send(profile)
+	_, err := p.bot.Send(profile)
+	if err != nil {
+		p.bot.Send(tgbotapi.NewMessage(target_id, err.Error()))
+	}
 }
 
 func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User) {
-	for true {
-		p.showProfile(user)
+	for {
+		p.showProfile(int64(user.ChatID), user)
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeProfile))
 		var check int8
 		check = -1

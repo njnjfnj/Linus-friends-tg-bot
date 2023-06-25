@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	_ "flag"
 	"log"
 	"strings"
 
@@ -26,11 +25,8 @@ func main() {
 		log.Fatal("token is not specified")
 	}
 
-	//for debug
-
-	// creating db настрой сиквел сервер, придурок
-	// потом, нет времени
-	db, err := Database.NewDatabase("db/storage.db") //username:password@tcp(127.0.0.1:3306)/
+	// creating db
+	db, err := Database.NewDatabase("db/storage.db")
 	if err != nil {
 		log.Fatal("Can not make a db: ", err)
 	}
