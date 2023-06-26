@@ -54,9 +54,8 @@ func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update) {
 					p.searchForProgrammers(chat_id, updates, user)
 				case 2:
 					p.showProfileMenu(chat_id, updates, user)
-
 				case 3:
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "SHOWING..."))
+					p.showMatches(chat_id, updates)
 				}
 			} else {
 				p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR"))

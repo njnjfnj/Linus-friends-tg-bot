@@ -29,7 +29,7 @@ func NewDatabase(path string) (*Database, error) {
 }
 
 func (d *Database) Init(context context.Context) error {
-	q := `CREATE TABLE IF NOT EXISTS db (chat_id INT NOT NULL, name TEXT, description TEXT, skillsString TEXT NOT NULL, years_of_programming INT NOT NULL, photo BLOB NOT NULL); CREATE TABLE IF NOT EXISTS skls (language TEXT NOT NULL, IDs TEXT); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON db (chat_id); CREATE UNIQUE INDEX IF NOT EXISTS idx_lng ON skls (language);` // (STRING, BIT))
+	q := `CREATE TABLE IF NOT EXISTS db (chat_id INT NOT NULL, name TEXT, description TEXT, skillsString TEXT NOT NULL, years_of_programming INT NOT NULL, photo BLOB NOT NULL); CREATE TABLE IF NOT EXISTS skls (language TEXT NOT NULL, IDs TEXT); CREATE TABLE IF NOT EXISTS mtchs (chat_id INT NOT NULL, IDs TEXT NOT NULL); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON db (chat_id); CREATE UNIQUE INDEX IF NOT EXISTS idx_lng ON skls (language); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON mtchs (chat_id);` // (STRING, BIT))
 	if _, err := d.db.ExecContext(context, q); err != nil {
 		return e.Wrap("Can not create DB", err)
 	}
@@ -40,6 +40,11 @@ func (d *Database) Init(context context.Context) error {
 
 func (d *Database) AddNewUser(u LinusUser.User) (err error) {
 	defer func() { err = e.WrapIfErr("Can not add new user", err) }()
+
+	q5 := `INSERT INTO mtchs (chat_id, IDs) VALUES(?, ?)`
+	if _, err := d.db.ExecContext(d.cntxt, q5, u.ChatID, ""); err != nil {
+		return e.Wrap("Can not add to matches db", err)
+	}
 
 	q2 := `SELECT COUNT(*) FROM skls WHERE language = ?`
 	q3 := `UPDATE skls SET IDs = IDs || ' ' || ? WHERE language = ?`
@@ -112,6 +117,7 @@ func (d *Database) GetUser(chat_id int) (LinusUser.User, error) {
 }
 
 func (d *Database) UpdateUser(u LinusUser.User) error {
+	//mute read
 	q := `UPDATE db SET name = ?, description = ?, skillsString = ?, years_of_programming = ?, photo = ? WHERE chat_id = ?`
 	if _, err := d.db.ExecContext(d.cntxt, q,
 		u.Name,
@@ -122,6 +128,7 @@ func (d *Database) UpdateUser(u LinusUser.User) error {
 		u.ChatID); err != nil {
 		return e.Wrap("Can not update user", err)
 	}
+	//
 	return nil
 }
 
@@ -168,4 +175,35 @@ func (d *Database) GetRandomUserForUser(chat_id int64, SearchByWhat int, user Li
 	}
 
 	return res, ids, nil
+}
+
+func (d *Database) GetMatches(chat_id int64) (res string, err error) {
+	defer func() { err = e.WrapIfErr("Can not get matches", err) }()
+
+	q := `SELECT IDs FROM mtchs WHERE chat_id = ?`
+	err = d.db.QueryRowContext(d.cntxt, q, chat_id).Scan(&res)
+	if err == sql.ErrNoRows {
+		return "", storage.ErrNoFriends
+	}
+	if err != nil {
+		return "", e.Wrap("Can not do query", err)
+	}
+
+	return res, err
+}
+
+func (d *Database) SetMatches(chat_id int64, matchesLeft string) error {
+	q := `UPDATE mtchs SET chat_id = ?, IDs = ?`
+	if _, err := d.db.ExecContext(d.cntxt, q, chat_id, matchesLeft); err != nil {
+		return e.Wrap("Can not set matches", err)
+	}
+	return nil
+}
+
+func (d *Database) AddMatch(chat_id int64, u LinusUser.User) error {
+	q := `UPDATE mtchs SET IDs = IDs || ' ' || ? WHERE chat_id = ?`
+	if _, err := d.db.ExecContext(d.cntxt, q, strconv.Itoa(u.ChatID), chat_id); err != nil {
+		return e.Wrap("Can not add user to matches", err)
+	}
+	return nil
 }

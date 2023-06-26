@@ -4,12 +4,16 @@ const MessageHelp = `Message help`
 const MessageStart = `Message Start`
 const MessageShowMenu = `1 - Search for programmers
 2 - Show my profile
-3 - Show matches`
+3 - Show programmers that liked you`
 
 const MessageSearchForProgrammersMenu = `1 - searching by experience
 2 - searching by language
 3 - searching by random
 4 - exit`
+
+const MessageShowMatchesMenu = `1 - Match
+2 - ignore
+4 - stop`
 
 const MessageIntaractionWithFriend = `1 - Match
 2 - next

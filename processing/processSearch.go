@@ -76,6 +76,10 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						}
 						switch check {
 						case 1:
+							if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
+							}
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
 							break getRespondLoop3
 						case 2:
 							break getRespondLoop3
@@ -131,6 +135,10 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 							}
 							switch check {
 							case 1:
+								if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
+									p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
+								}
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
 								break getRespondLoop4
 							case 2:
 								break getRespondLoop4
