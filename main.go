@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"strings"
 
@@ -13,16 +14,16 @@ import (
 
 func main() {
 	//getting token
-	// token := flag.String(
-	// 	"token",
-	// 	"",
-	// 	"token for access to tg bot",
-	// )
-	// flag.Parse()
+	token := flag.String(
+		"token",
+		"",
+		"token for access to tg bot",
+	)
+	flag.Parse()
 
-	// if *token == "" {
-	// 	log.Fatal("token is not specified")
-	// }
+	if *token == "" {
+		log.Fatal("token is not specified")
+	}
 
 	// creating db
 	db, err := Database.NewDatabase("db/storage.db")
@@ -34,7 +35,7 @@ func main() {
 	}
 
 	// bot init
-	bot, err := tgbotapi.NewBotAPI("6087771025:AAErhKTU1rJGfjOUegXP8uGAKOaOc3NAMQ8") // *token
+	bot, err := tgbotapi.NewBotAPI(*token) // *token
 	if err != nil {
 		log.Panic(err)
 	}

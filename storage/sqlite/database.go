@@ -117,7 +117,6 @@ func (d *Database) GetUser(chat_id int) (LinusUser.User, error) {
 }
 
 func (d *Database) UpdateUser(u LinusUser.User) error {
-	//mute read
 	q := `UPDATE db SET name = ?, description = ?, skillsString = ?, years_of_programming = ?, photo = ? WHERE chat_id = ?`
 	if _, err := d.db.ExecContext(d.cntxt, q,
 		u.Name,
@@ -128,7 +127,6 @@ func (d *Database) UpdateUser(u LinusUser.User) error {
 		u.ChatID); err != nil {
 		return e.Wrap("Can not update user", err)
 	}
-	//
 	return nil
 }
 
