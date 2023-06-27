@@ -4,19 +4,20 @@ import (
 	"LinusFriends/storage"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (p *Processing) showMatches(chat_id int64, updates chan tgbotapi.Update) {
+func (p *Processing) showMatches(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer) bool {
 	matches, err := p.db.GetMatches(chat_id)
 	if len(matches) == 0 || err == storage.ErrNoFriends {
 		p.bot.Send(tgbotapi.NewMessage(chat_id, "No programmers there"))
-		return
+		return false
 	}
 	if err != nil {
 		p.bot.Send(tgbotapi.NewMessage(chat_id, "Something wrong with db, sorry"))
-		return
+		return false
 	}
 
 	matchesArr := strings.Split(matches, " ")
@@ -31,40 +32,46 @@ getRespondLoop1:
 		user, err := p.db.GetUser(temp)
 		if err != nil {
 			p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not get user"))
-			return
+			return false
 		}
 		p.showProfile(chat_id, user)
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMatchesMenu))
 	getRespondLoop2:
-		for upd := range updates {
-			if upd.Message != nil && len(upd.Message.Text) == 1 {
-				check, err := strconv.Atoi(upd.Message.Text)
-				if err != nil {
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-					continue
-				}
-				switch check {
-				case 1:
-					var ChatInfoConf tgbotapi.ChatInfoConfig
-					ChatInfoConf.ChatID = int64(user.ChatID)
-					chat, err := p.bot.GetChat(ChatInfoConf)
+		for {
+			select {
+			case <-timer.C:
+				return true
+			case upd := <-updates:
+				if upd.Message != nil && len(upd.Message.Text) == 1 {
+					resetTimer(timer)
+					check, err := strconv.Atoi(upd.Message.Text)
 					if err != nil {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "Something wrong with telegram, sorry("))
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
+						continue
 					}
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "@"+chat.UserName))
-					matchesArr = matchesArr[1:]
-					break getRespondLoop2
-				case 2:
-					matchesArr = matchesArr[1:]
-					break getRespondLoop2
-				case 4:
+					switch check {
+					case 1:
+						var ChatInfoConf tgbotapi.ChatInfoConfig
+						ChatInfoConf.ChatID = int64(user.ChatID)
+						chat, err := p.bot.GetChat(ChatInfoConf)
+						if err != nil {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "Something wrong with telegram, sorry("))
+						}
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "@"+chat.UserName))
+						matchesArr = matchesArr[1:]
+						break getRespondLoop2
+					case 2:
+						matchesArr = matchesArr[1:]
+						break getRespondLoop2
+					case 4:
 
-					break getRespondLoop1
-				default:
+						break getRespondLoop1
+					default:
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
+					}
+				} else {
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 				}
-			} else {
-				p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 			}
 		}
 	}
@@ -73,4 +80,5 @@ getRespondLoop1:
 		matchesLeft += " " + i
 	}
 	p.db.SetMatches(chat_id, matchesLeft)
+	return false
 }

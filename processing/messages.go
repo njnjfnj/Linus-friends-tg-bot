@@ -35,3 +35,6 @@ const MessageChangeYearsPfProgramming = "How many years have you been programmin
 const MessageHelpCancel = `(To cancel type 'c')`
 
 const MessageErrorCanNotUploadPhoto = "The bot can not upload your photo. Please make sure your photo does not have any problems, or try again later."
+
+const MessageSessionTimeEnded = `Session time out
+type \start to use LinusFriends bot`

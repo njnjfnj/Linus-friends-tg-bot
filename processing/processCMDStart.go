@@ -8,17 +8,22 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func (p *Processing) processCMDStart(chat_id int64, updates chan tgbotapi.Update) error {
+	defer func() {
+		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSessionTimeEnded))
+	}()
 	check, err := p.db.IsUserExists(int(chat_id))
+	timer := time.NewTimer(20 * time.Second)
 	if err != nil {
 		return e.Wrap("Can not chek if user exists", err)
 	}
 	if check {
-		p.showMenu(chat_id, updates)
+		p.showMenu(chat_id, updates, timer)
 		return nil
 	}
 	p.bot.Send(tgbotapi.NewMessage(chat_id, MessageStart+"\n\n"+MessageChangeName))
@@ -26,73 +31,83 @@ func (p *Processing) processCMDStart(chat_id int64, updates chan tgbotapi.Update
 	var newUser LinusUser.User
 	newUser.ChatID = int(chat_id)
 	position := 0
-
-	for upd := range updates {
-		if upd.Message != nil { // upd.FromChat().ChatConfig().ChatID == chat_id &&
-			switch position {
-			case 0:
-				if len(upd.Message.Text) != 0 {
-					if len(upd.Message.Text) > 50 {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum name length - 50 characters"))
-						continue
+getResponseLoop:
+	for {
+		select {
+		case <-timer.C:
+			return nil
+		case upd := <-updates:
+			if upd.Message != nil {
+				switch position {
+				case 0:
+					if len(upd.Message.Text) != 0 {
+						if len(upd.Message.Text) > 50 {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum name length - 50 characters"))
+							continue
+						}
+						newUser.Name = upd.Message.Text
+						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeDescription))
+						position++
+					} else {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "it is not a text\n\n"+MessageChangeName))
 					}
-					newUser.Name = upd.Message.Text
-					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeDescription))
-					position++
-				}
-			case 1:
-				if len(upd.Message.Text) != 0 {
-					if len(upd.Message.Text) > 1500 {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum description length - 1500 characters"))
-						continue
+				case 1:
+					if len(upd.Message.Text) != 0 {
+						if len(upd.Message.Text) > 1500 {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum description length - 1500 characters"))
+							continue
+						}
+						newUser.Description = upd.Message.Text
+						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeProfilePic))
+						position++
+					} else {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "it is not a text\n\n"+MessageChangeDescription))
 					}
-					newUser.Description = upd.Message.Text
-					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeProfilePic))
-					position++
-				}
-			case 2:
-				if upd.Message.Photo != nil {
-					if newUser.Image, err = p.processImage(chat_id, upd); err != nil {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorCanNotUploadPhoto))
-						log.Println("Can not process a cmd: ", err)
-						continue
+				case 2:
+					if upd.Message.Photo != nil {
+						if newUser.Image, err = p.processImage(chat_id, upd); err != nil {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorCanNotUploadPhoto))
+							log.Println("Can not process a cmd: ", err)
+							continue
+						}
+
+						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeSkills))
+						position++
+					} else {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "it is not a photo\n\n"+MessageChangeProfilePic))
 					}
+				case 3:
+					if len(upd.Message.Text) != 0 {
+						if len(upd.Message.Text) > 200 {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum length - 200 characters"))
+							continue
+						}
 
-					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeSkills))
-					position++
-				}
-			case 3:
-				if len(upd.Message.Text) != 0 {
-					if len(upd.Message.Text) > 200 {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum length - 200 characters"))
-						continue
+						buf := strings.ToLower(upd.Message.Text)
+
+						newUser.SkillsString = buf
+
+						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeYearsPfProgramming))
+						position++
+					} else {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "it is not a text\n\n"+MessageChangeSkills))
 					}
-
-					buf := strings.ToLower(upd.Message.Text)
-
-					//newUser.SkillsMap = make(map[string]bool)
-					newUser.SkillsString = buf
-					// for _, i := range strings.Split(buf, " ") {
-					// 	newUser.SkillsMap[i] = true
-					// }
-
-					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeYearsPfProgramming))
-					position++
-				}
-			case 4:
-				if len(upd.Message.Text) != 0 {
-					buf, err := strconv.ParseInt(upd.Message.Text, 0, 64)
-					if err != nil {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not parse to int"))
-						continue
+				case 4:
+					if len(upd.Message.Text) != 0 {
+						buf, err := strconv.ParseInt(upd.Message.Text, 0, 64)
+						if err != nil {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not parse to int"))
+							continue
+						}
+						newUser.YearsOfProgramming = int(buf)
+						position++
+					} else {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "it is not a text\n\n"+MessageChangeYearsPfProgramming))
 					}
-					newUser.YearsOfProgramming = int(buf)
-					position++
-					//break
 				}
-			}
-			if position == 5 {
-				break
+				if position == 5 {
+					break getResponseLoop
+				}
 			}
 		}
 	}
@@ -101,8 +116,7 @@ func (p *Processing) processCMDStart(chat_id int64, updates chan tgbotapi.Update
 		return err
 	}
 
-	p.showMenu(chat_id, updates)
-
+	p.showMenu(chat_id, updates, timer)
 	return nil
 }
 

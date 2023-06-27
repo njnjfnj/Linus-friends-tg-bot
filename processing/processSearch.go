@@ -11,36 +11,42 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User) {
+func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
 	for {
 		countOfErrors, countOfHits := 0, 0
 		var searchingByWhat int
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSearchForProgrammersMenu))
 	getRespondLoop1:
-		for upd := range updates {
-			if upd.Message != nil && len(upd.Message.Text) == 1 {
-				check, err := strconv.Atoi(upd.Message.Text)
-				if err != nil {
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-					continue
-				}
-				switch check {
-				case 1:
-					searchingByWhat = storage.SearchingByExperience
-					break getRespondLoop1
-				case 2:
-					searchingByWhat = storage.SearchingByLanguage
-					break getRespondLoop1
-				case 3:
-					searchingByWhat = storage.SearchingByRandom
-					break getRespondLoop1
-				case 4:
-					return
-				default:
+		for {
+			select {
+			case <-timer.C:
+				return true
+			case upd := <-updates:
+				if upd.Message != nil && len(upd.Message.Text) == 1 {
+					resetTimer(timer)
+					check, err := strconv.Atoi(upd.Message.Text)
+					if err != nil {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
+						continue
+					}
+					switch check {
+					case 1:
+						searchingByWhat = storage.SearchingByExperience
+						break getRespondLoop1
+					case 2:
+						searchingByWhat = storage.SearchingByLanguage
+						break getRespondLoop1
+					case 3:
+						searchingByWhat = storage.SearchingByRandom
+						break getRespondLoop1
+					case 4:
+						return false
+					default:
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
+					}
+				} else {
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
 				}
-			} else {
-				p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
 			}
 		}
 	getRespondLoop2:
@@ -54,7 +60,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 				p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR: can not get user\n"+err.Error()))
 				if countOfErrors > 6 {
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "Please, try again later"))
-					return
+					return false
 				}
 				continue
 			} else if countOfErrors != 0 {
@@ -67,29 +73,35 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 				p.showProfile(chat_id, friend)
 				p.bot.Send(tgbotapi.NewMessage(chat_id, MessageIntaractionWithFriend))
 			getRespondLoop3:
-				for upd := range updates {
-					if upd.Message != nil && len(upd.Message.Text) == 1 {
-						check, err := strconv.Atoi(upd.Message.Text)
-						if err != nil {
-							p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-							continue
-						}
-						switch check {
-						case 1:
-							if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
-								p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
+				for {
+					select {
+					case <-timer.C:
+						return true
+					case upd := <-updates:
+						if upd.Message != nil && len(upd.Message.Text) == 1 {
+							resetTimer(timer)
+							check, err := strconv.Atoi(upd.Message.Text)
+							if err != nil {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
+								continue
 							}
-							p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
-							break getRespondLoop3
-						case 2:
-							break getRespondLoop3
-						case 4:
-							break getRespondLoop2
-						default:
+							switch check {
+							case 1:
+								if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
+									p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
+								}
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
+								break getRespondLoop3
+							case 2:
+								break getRespondLoop3
+							case 4:
+								break getRespondLoop2
+							default:
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
+							}
+						} else {
 							p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 						}
-					} else {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 					}
 				}
 			} else {
@@ -114,7 +126,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR: can not get user\n"+err.Error()))
 						if countOfErrors > 6 {
 							p.bot.Send(tgbotapi.NewMessage(chat_id, "Please, try again later"))
-							return
+							return false
 						}
 						continue
 					} else if countOfErrors != 0 {
@@ -126,29 +138,35 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 					p.showProfile(chat_id, friend)
 					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageIntaractionWithFriend))
 				getRespondLoop4:
-					for upd := range updates {
-						if upd.Message != nil && len(upd.Message.Text) == 1 {
-							check, err := strconv.Atoi(upd.Message.Text)
-							if err != nil {
-								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-								continue
-							}
-							switch check {
-							case 1:
-								if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
-									p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
+					for {
+						select {
+						case <-timer.C:
+							return true
+						case upd := <-updates:
+							if upd.Message != nil && len(upd.Message.Text) == 1 {
+								resetTimer(timer)
+								check, err := strconv.Atoi(upd.Message.Text)
+								if err != nil {
+									p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
+									continue
 								}
-								p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
-								break getRespondLoop4
-							case 2:
-								break getRespondLoop4
-							case 4:
-								break getRespondLoop2
-							default:
+								switch check {
+								case 1:
+									if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
+										p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
+									}
+									p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
+									break getRespondLoop4
+								case 2:
+									break getRespondLoop4
+								case 4:
+									break getRespondLoop2
+								default:
+									p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
+								}
+							} else {
 								p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 							}
-						} else {
-							p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 						}
 					}
 
