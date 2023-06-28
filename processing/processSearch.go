@@ -23,7 +23,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 				return true
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
-					resetTimer(timer)
+					p.resetTimer(timer)
 					check, err := strconv.Atoi(upd.Message.Text)
 					if err != nil {
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
@@ -79,7 +79,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						return true
 					case upd := <-updates:
 						if upd.Message != nil && len(upd.Message.Text) == 1 {
-							resetTimer(timer)
+							p.resetTimer(timer)
 							check, err := strconv.Atoi(upd.Message.Text)
 							if err != nil {
 								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
@@ -144,7 +144,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 							return true
 						case upd := <-updates:
 							if upd.Message != nil && len(upd.Message.Text) == 1 {
-								resetTimer(timer)
+								p.resetTimer(timer)
 								check, err := strconv.Atoi(upd.Message.Text)
 								if err != nil {
 									p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))

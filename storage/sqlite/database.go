@@ -205,3 +205,13 @@ func (d *Database) AddMatch(chat_id int64, u LinusUser.User) error {
 	}
 	return nil
 }
+
+func (d *Database) UserCount() (int, error) {
+	q := `SELECT COUNT(*) FROM db`
+	var res int
+
+	if err := d.db.QueryRowContext(d.cntxt, q).Scan(&res); err != nil {
+		return 0, err
+	}
+	return res, nil
+}

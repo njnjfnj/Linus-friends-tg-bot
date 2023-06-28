@@ -23,4 +23,5 @@ type Storage interface {
 	AddMatch(chat_id int64, user LinusUser.User) error
 	GetMatches(chat_id int64) (string, error)
 	SetMatches(chat_id int64, matchesLeft string) error
+	UserCount() (int, error)
 }

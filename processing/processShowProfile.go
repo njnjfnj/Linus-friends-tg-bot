@@ -39,7 +39,7 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 				return true
 			case upd := <-updates:
 				if upd.Message != nil {
-					resetTimer(timer)
+					p.resetTimer(timer)
 					if check == -1 && len(upd.Message.Text) == 1 {
 						buf, err := strconv.Atoi(upd.Message.Text)
 						if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"strconv"
 	"strings"
 
 	"LinusFriends/processing"
@@ -19,10 +20,32 @@ func main() {
 		"",
 		"token for access to tg bot",
 	)
+	adminPassword := flag.String(
+		"pswrd",
+		"",
+		"password for administrator",
+	)
+
+	adminChoiceFlag := flag.String(
+		"adminChoice",
+		"",
+		"value that is going to be a choice value (like 1 - Search for programmers, 2 - show my profile, 3 - show matches)",
+	)
+
 	flag.Parse()
 
 	if *token == "" {
 		log.Fatal("token is not specified")
+	}
+	if *adminPassword == "" {
+		log.Fatal("admin password is not specified")
+	}
+	if *adminChoiceFlag == "" {
+		log.Fatal("admin choice is not specified")
+	}
+	adminChoice, err := strconv.Atoi(*adminChoiceFlag)
+	if err != nil {
+		log.Fatal("admin choice flag can not parse to int")
 	}
 
 	// creating db
@@ -51,7 +74,7 @@ func main() {
 	// creating processing object
 	// cheking updates
 	updates := bot.GetUpdatesChan(u)
-	process := processing.NewProcessing(bot, db)
+	process := processing.NewProcessing(bot, db, adminPassword, &adminChoice)
 	for upd := range updates {
 		go func(update tgbotapi.Update) {
 			if update.Message != nil {
