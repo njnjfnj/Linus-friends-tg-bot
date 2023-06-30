@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"LinusFriends/advertisement"
 	"LinusFriends/libs/e"
 	"LinusFriends/storage"
 	"strconv"
@@ -13,8 +14,9 @@ type Processing struct {
 	bot                *tgbotapi.BotAPI
 	db                 storage.Storage
 	adminPassword      string
-	adminChoice        int64
+	adminChoice        string
 	timerResetDuration int
+	advert             chan advertisement.Ad
 }
 
 func (p *Processing) CMD(cmd string, chat_id int64, updates chan tgbotapi.Update) (err error) {
@@ -31,59 +33,95 @@ func (p *Processing) CMD(cmd string, chat_id int64, updates chan tgbotapi.Update
 	return nil
 }
 
-func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPassword *string, adminChoice *int) *Processing {
+func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPassword *string, adminChoice *string, adChan chan advertisement.Ad) *Processing {
 	return &Processing{
 		bot:                botapi,
 		db:                 storage,
 		adminPassword:      *adminPassword,
-		adminChoice:        int64(*adminChoice),
+		adminChoice:        *adminChoice,
 		timerResetDuration: 30,
+		advert:             adChan,
 	}
 }
 
 func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer) {
-	p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
 	for {
+		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
 		select {
 		case <-timer.C:
 			return
+		case MessageAdvert := <-p.advert:
+			p.showAd(chat_id, &MessageAdvert, updates, timer)
 		case upd := <-updates:
 			if upd.Message != nil { // upd.FromChat().ChatConfig().ChatID == chat_id &&
 				p.resetTimer(timer)
 
-				check, err := strconv.ParseInt(upd.Message.Text, 0, 64)
-				if err != nil {
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR"))
-				}
 				user, err := p.db.GetUser(int(chat_id))
 				if err != nil {
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not get user"+err.Error()))
 					continue
 				}
-				switch check {
-				case 1:
+				switch upd.Message.Text {
+				case "1":
 					if p.searchForProgrammers(chat_id, updates, user, timer) {
 						return
 					}
-				case 2:
+				case "2":
 					if p.showProfileMenu(chat_id, updates, user, timer) {
 						return
 					}
-				case 3:
+				case "3":
 					if p.showMatches(chat_id, updates, timer) {
 						return
 					}
 				case p.adminChoice:
 					p.processAdmin(chat_id, updates, timer)
 				}
-
-				p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
 			}
-
 		}
 	}
 }
 
 func (p *Processing) resetTimer(timer *time.Timer) {
 	timer.Reset(time.Duration(p.timerResetDuration) * time.Minute)
+}
+
+func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, updates chan tgbotapi.Update, timer *time.Timer) {
+	p.bot.Send(MessageAdvert.Content)
+
+	var MessageErrorRating = "Enter a number from 0 to 5"
+
+getRespondLoop1:
+	for {
+		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
+		select {
+		case <-timer.C:
+			return
+		case upd := <-updates:
+			if upd.Message != nil {
+				p.resetTimer(timer)
+
+				if len(upd.Message.Text) == 1 {
+					rating, err := strconv.Atoi(upd.Message.Text)
+					if err != nil {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorRating))
+						continue
+					}
+
+					if rating == 0 {
+						break getRespondLoop1
+					} else if rating > 0 && rating < 6 {
+
+						break getRespondLoop1
+					} else {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorRating))
+					}
+				} else {
+					p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorRating))
+				}
+			}
+		}
+	}
+
+	MessageAdvert = &advertisement.Ad{}
 }

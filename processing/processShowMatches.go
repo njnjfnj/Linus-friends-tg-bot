@@ -44,13 +44,9 @@ getRespondLoop1:
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
 					p.resetTimer(timer)
-					check, err := strconv.Atoi(upd.Message.Text)
-					if err != nil {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-						continue
-					}
-					switch check {
-					case 1:
+
+					switch upd.Message.Text {
+					case "1":
 						var ChatInfoConf tgbotapi.ChatInfoConfig
 						ChatInfoConf.ChatID = int64(user.ChatID)
 						chat, err := p.bot.GetChat(ChatInfoConf)
@@ -60,10 +56,10 @@ getRespondLoop1:
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "@"+chat.UserName))
 						matchesArr = matchesArr[1:]
 						break getRespondLoop2
-					case 2:
+					case "2":
 						matchesArr = matchesArr[1:]
 						break getRespondLoop2
-					case 4:
+					case "4":
 
 						break getRespondLoop1
 					default:

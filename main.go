@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"strconv"
 	"strings"
 
 	"LinusFriends/processing"
@@ -26,7 +25,7 @@ func main() {
 		"password for administrator",
 	)
 
-	adminChoiceFlag := flag.String(
+	adminChoice := flag.String(
 		"adminChoice",
 		"",
 		"value that is going to be a choice value (like 1 - Search for programmers, 2 - show my profile, 3 - show matches)",
@@ -40,12 +39,8 @@ func main() {
 	if *adminPassword == "" {
 		log.Fatal("admin password is not specified")
 	}
-	if *adminChoiceFlag == "" {
+	if *adminChoice == "" {
 		log.Fatal("admin choice is not specified")
-	}
-	adminChoice, err := strconv.Atoi(*adminChoiceFlag)
-	if err != nil {
-		log.Fatal("admin choice flag can not parse to int")
 	}
 
 	// creating db
@@ -74,7 +69,7 @@ func main() {
 	// creating processing object
 	// cheking updates
 	updates := bot.GetUpdatesChan(u)
-	process := processing.NewProcessing(bot, db, adminPassword, &adminChoice)
+	process := processing.NewProcessing(bot, db, adminPassword, adminChoice, make(chan tgbotapi.PhotoConfig))
 	for upd := range updates {
 		go func(update tgbotapi.Update) {
 			if update.Message != nil {

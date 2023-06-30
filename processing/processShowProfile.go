@@ -2,7 +2,6 @@ package processing
 
 import (
 	"LinusFriends/LinusUser"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -17,7 +16,7 @@ func (p *Processing) showProfile(target_id int64, user LinusUser.User) {
 
 	profile.Caption = user.Name + "\n" +
 		user.SkillsString +
-		"\nProgramming experience: " + fmt.Sprintf("%f years\n", user.YearsOfProgramming) +
+		"\nProgramming experience: " + strconv.Itoa(user.YearsOfProgramming) + " years\n" +
 		user.Description + "\n"
 
 	_, err := p.bot.Send(profile)

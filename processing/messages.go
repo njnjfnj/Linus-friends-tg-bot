@@ -38,3 +38,5 @@ const MessageErrorCanNotUploadPhoto = "The bot can not upload your photo. Please
 
 const MessageSessionTimeEnded = `Session time out
 type \start to use LinusFriends bot`
+
+const MessageRateAdvert = `Rate this advertisement from 1 to 5 (if you want to skip this, enter 0)`

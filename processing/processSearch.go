@@ -13,33 +13,32 @@ import (
 
 func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
 	for {
+		var bufAdvert tgbotapi.PhotoConfig
 		countOfErrors, countOfHits := 0, 0
 		var searchingByWhat int
-		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSearchForProgrammersMenu))
 	getRespondLoop1:
 		for {
+			p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSearchForProgrammersMenu))
 			select {
+			case bufAdvert = <-p.advert:
+				p.showAd(&bufAdvert, timer)
 			case <-timer.C:
 				return true
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
 					p.resetTimer(timer)
-					check, err := strconv.Atoi(upd.Message.Text)
-					if err != nil {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-						continue
-					}
-					switch check {
-					case 1:
+
+					switch upd.Message.Text {
+					case "1":
 						searchingByWhat = storage.SearchingByExperience
 						break getRespondLoop1
-					case 2:
+					case "2":
 						searchingByWhat = storage.SearchingByLanguage
 						break getRespondLoop1
-					case 3:
+					case "3":
 						searchingByWhat = storage.SearchingByRandom
 						break getRespondLoop1
-					case 4:
+					case "4":
 						return false
 					default:
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
@@ -75,26 +74,24 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			getRespondLoop3:
 				for {
 					select {
+					case bufAdvert = <-p.advert:
+
 					case <-timer.C:
 						return true
 					case upd := <-updates:
 						if upd.Message != nil && len(upd.Message.Text) == 1 {
 							p.resetTimer(timer)
-							check, err := strconv.Atoi(upd.Message.Text)
-							if err != nil {
-								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-								continue
-							}
-							switch check {
-							case 1:
+
+							switch upd.Message.Text {
+							case "1":
 								if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
 									p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
 								}
 								p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
 								break getRespondLoop3
-							case 2:
+							case "2":
 								break getRespondLoop3
-							case 4:
+							case "4":
 								break getRespondLoop2
 							default:
 								p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
@@ -145,21 +142,17 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						case upd := <-updates:
 							if upd.Message != nil && len(upd.Message.Text) == 1 {
 								p.resetTimer(timer)
-								check, err := strconv.Atoi(upd.Message.Text)
-								if err != nil {
-									p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!"))
-									continue
-								}
-								switch check {
-								case 1:
+
+								switch upd.Message.Text {
+								case "1":
 									if err := p.db.AddMatch(int64(friend.ChatID), user); err != nil {
 										p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, it is something wrong with bot("))
 									}
 									p.bot.Send(tgbotapi.NewMessage(chat_id, "successfully matched"))
 									break getRespondLoop4
-								case 2:
+								case "2":
 									break getRespondLoop4
-								case 4:
+								case "4":
 									break getRespondLoop2
 								default:
 									p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))

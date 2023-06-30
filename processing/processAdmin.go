@@ -31,13 +31,13 @@ getResponseLoop2:
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MAMenu))
 		for upd := range updates {
 			if upd.Message != nil {
-				switch upd.Message.Text { // от сделай везде, что бы в инт не парсилось, а то херню сделал
+				switch upd.Message.Text {
 				case "0":
 					break getResponseLoop2
 				case "1":
 
 				case "2":
-
+					p.changeTimeReset(chat_id, updates)
 				case "3":
 					number, err := p.db.UserCount()
 					if err != nil {
@@ -53,4 +53,21 @@ getResponseLoop2:
 	}
 
 	p.resetTimer(timer)
+}
+
+func (p *Processing) changeTimeReset(chat_id int64, updates chan tgbotapi.Update) {
+	p.bot.Send(tgbotapi.NewMessage(chat_id, "Set another time (current time: "+strconv.Itoa(p.timerResetDuration)+" default time: 30)"))
+	for upd := range updates {
+		if upd.Message != nil {
+			buf, err := strconv.Atoi(upd.Message.Text)
+			if err != nil {
+				p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
+				p.bot.Send(tgbotapi.NewMessage(chat_id, "Set another time (current time: "+strconv.Itoa(p.timerResetDuration)+" default time: 30)"))
+				continue
+			}
+			p.timerResetDuration = buf
+			p.bot.Send(tgbotapi.NewMessage(chat_id, "The time has been changed successfully!"))
+			break
+		}
+	}
 }
