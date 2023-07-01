@@ -86,7 +86,10 @@ func (p *Processing) resetTimer(timer *time.Timer) {
 	timer.Reset(time.Duration(p.timerResetDuration) * time.Minute)
 }
 
-func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, updates chan tgbotapi.Update, timer *time.Timer) {
+func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, updates chan tgbotapi.Update, timer *time.Timer) (rating int, seen int) {
+	defer func() {
+
+	}()
 	p.bot.Send(MessageAdvert.Content)
 
 	var MessageErrorRating = "Enter a number from 0 to 5"
@@ -102,16 +105,18 @@ getRespondLoop1:
 				p.resetTimer(timer)
 
 				if len(upd.Message.Text) == 1 {
-					rating, err := strconv.Atoi(upd.Message.Text)
+					bufRating, err := strconv.Atoi(upd.Message.Text)
 					if err != nil {
 						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorRating))
 						continue
 					}
 
-					if rating == 0 {
+					if bufRating == 0 {
+						seen++
 						break getRespondLoop1
-					} else if rating > 0 && rating < 6 {
-
+					} else if bufRating > 0 && bufRating < 6 {
+						seen++
+						rating = bufRating
 						break getRespondLoop1
 					} else {
 						p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorRating))
@@ -124,4 +129,6 @@ getRespondLoop1:
 	}
 
 	MessageAdvert = &advertisement.Ad{}
+
+	return rating, seen
 }

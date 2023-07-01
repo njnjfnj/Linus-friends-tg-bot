@@ -2,6 +2,7 @@ package processing
 
 import (
 	"LinusFriends/LinusUser"
+	"LinusFriends/advertisement"
 	"LinusFriends/storage"
 	"math/rand"
 	"strconv"
@@ -13,7 +14,7 @@ import (
 
 func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
 	for {
-		var bufAdvert tgbotapi.PhotoConfig
+		var bufAdvert advertisement.Ad
 		countOfErrors, countOfHits := 0, 0
 		var searchingByWhat int
 	getRespondLoop1:
@@ -21,7 +22,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSearchForProgrammersMenu))
 			select {
 			case bufAdvert = <-p.advert:
-				p.showAd(&bufAdvert, timer)
+				p.showAd(chat_id, &bufAdvert, updates, timer)
 			case <-timer.C:
 				return true
 			case upd := <-updates:

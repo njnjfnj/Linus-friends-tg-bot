@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"LinusFriends/advertisement"
 	"LinusFriends/processing"
 	Database "LinusFriends/storage/sqlite"
 
@@ -69,7 +70,7 @@ func main() {
 	// creating processing object
 	// cheking updates
 	updates := bot.GetUpdatesChan(u)
-	process := processing.NewProcessing(bot, db, adminPassword, adminChoice, make(chan tgbotapi.PhotoConfig))
+	process := processing.NewProcessing(bot, db, adminPassword, adminChoice, make(chan advertisement.Ad))
 	for upd := range updates {
 		go func(update tgbotapi.Update) {
 			if update.Message != nil {
