@@ -93,6 +93,8 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 								continue
 							}
 
+							// тут не изменяются скилы в бд
+
 							buf := strings.ToLower(upd.Message.Text)
 
 							user.SkillsString = buf

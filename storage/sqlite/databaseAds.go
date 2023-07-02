@@ -5,9 +5,6 @@ import (
 	"LinusFriends/libs/e"
 	"LinusFriends/storage"
 	"database/sql"
-	"encoding/json"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 /*
@@ -24,19 +21,17 @@ import (
 */
 
 func (d *Database) AddNewAd(ad advertisement.Ad) error {
-	q := `INSERT INTO ads (advert_id, content, rating, seen) VALUES(?, ?, ?, ?)`
+	q := `INSERT INTO ads (advert_id, content, rating, seen, rated, description) VALUES(?, ?, ?, ?, ?, ?)`
 
-	bufContent, err := json.Marshal(ad.Content)
-	if err != nil {
-		return e.Wrap("can not parse to json", err)
-	}
 	//ratedratedratedratedratedrated
 
 	if _, err := d.db.ExecContext(d.cntxt, q,
 		ad.Advert_id,
-		bufContent,
+		ad.Content,
 		ad.Rate,
-		ad.Seen); err != nil {
+		ad.Seen,
+		ad.Rated,
+		ad.Description); err != nil {
 		return e.Wrap("Can not add new advertisement", err)
 	}
 
@@ -51,17 +46,17 @@ func (d *Database) DeleteAd(advert_id int) error {
 	return nil
 }
 
-func (d *Database) UpdateAdContent(content *tgbotapi.PhotoConfig, advert_id int) error {
-	q := `UPDATE ads SET content = ? WHERE advert_id = ?`
-	if _, err := d.db.ExecContext(d.cntxt, q, *content, advert_id); err != nil {
+func (d *Database) UpdateAdContent(content []byte, description string, advert_id int) error {
+	q := `UPDATE ads SET content = ?, description = ? WHERE advert_id = ?`
+	if _, err := d.db.ExecContext(d.cntxt, q, content, description, advert_id); err != nil {
 		return e.Wrap("can not update content of advert", err)
 	}
 	return nil
 }
 
-func (d *Database) UpdateAdRatingAndViews(rating float32, seen int, advert_id int) error {
-	q := `UPDATE ads SET rating = ?, seen = ? WHERE advert_id = ?`
-	if _, err := d.db.ExecContext(d.cntxt, q, rating, seen, advert_id); err != nil {
+func (d *Database) UpdateAdRatingAndViews(rating float32, seen int, rated int, advert_id int) error {
+	q := `UPDATE ads SET rating = ?, seen = ?, rated = ? WHERE advert_id = ?`
+	if _, err := d.db.ExecContext(d.cntxt, q, rating, seen, rated, advert_id); err != nil {
 		return e.Wrap("can not update rating and views of advert", err)
 	}
 	return nil
@@ -74,7 +69,9 @@ func (d *Database) GetAd(advert_id int) (res advertisement.Ad, err error) {
 		&res.Advert_id,
 		&res.Content,
 		&res.Rate,
-		&res.Seen)
+		&res.Seen,
+		&res.Rated,
+		&res.Description)
 
 	if err == sql.ErrNoRows {
 		return advertisement.Ad{}, storage.ErrNoAds
@@ -101,7 +98,12 @@ func (d *Database) GetAds() (res []advertisement.Ad, err error) {
 
 func (d *Database) GetAdsIds() (res []int, err error) {
 	q := `SELECT advert_id FROM ads`
-	err = d.db.QueryRowContext(d.cntxt, q).Scan(&res)
+	rows, err := d.db.Query(q)
+	defer func() {
+		if err1 := rows.Close(); err1 != nil {
+			err = e.Wrap(err1.Error(), err)
+		}
+	}()
 	if err == sql.ErrNoRows {
 		return nil, storage.ErrNoAds
 	}
@@ -109,5 +111,23 @@ func (d *Database) GetAdsIds() (res []int, err error) {
 		return nil, e.Wrap("can not get adverts IDs", err)
 	}
 
+	for rows.Next() {
+		var buf int
+		if err := rows.Scan(&buf); err != nil {
+			return nil, e.Wrap("can not scan adverts IDs", err)
+		}
+		res = append(res, buf)
+	}
+
 	return res, nil
+}
+
+func (d *Database) IsAdExists(advert_id int) (bool, error) {
+	q := `SELECT COUNT(*) FROM ads WHERE advert_id = ?`
+	var res int
+
+	if err := d.db.QueryRowContext(d.cntxt, q, advert_id).Scan(&res); err != nil {
+		return false, e.Wrap("Can not check if advert exists", err)
+	}
+	return res > 0, nil
 }

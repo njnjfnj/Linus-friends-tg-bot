@@ -30,7 +30,7 @@ func NewDatabase(path string) (*Database, error) {
 
 func (d *Database) Init(context context.Context) error {
 	q := `CREATE TABLE IF NOT EXISTS db (chat_id INT NOT NULL, name TEXT, description TEXT, skillsString TEXT NOT NULL, years_of_programming INT NOT NULL, photo BLOB NOT NULL); CREATE TABLE IF NOT EXISTS skls (language TEXT NOT NULL, IDs TEXT); CREATE TABLE IF NOT EXISTS mtchs (chat_id INT NOT NULL, IDs TEXT NOT NULL); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON db (chat_id); CREATE UNIQUE INDEX IF NOT EXISTS idx_lng ON skls (language); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON mtchs (chat_id);
-	CREATE TABLE IF NOT EXISTS ads(advert_id INT NOT NULL, content TEXT NOT NULL, rating REAL NOT NULL, seen INT); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON ads (advert_id); CREATE UNIQUE INDEX IF NOT EXISTS idx_rating ON ads (rating);`
+	CREATE TABLE IF NOT EXISTS ads(advert_id INT NOT NULL, content BLOB NOT NULL, rating REAL NOT NULL, seen INT, rated INT, description TEXT); CREATE UNIQUE INDEX IF NOT EXISTS idx_id ON ads (advert_id);`
 	if _, err := d.db.ExecContext(context, q); err != nil {
 		return e.Wrap("Can not create DB", err)
 	}

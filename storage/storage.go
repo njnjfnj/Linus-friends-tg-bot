@@ -4,8 +4,6 @@ import (
 	"LinusFriends/LinusUser"
 	"LinusFriends/advertisement"
 	"errors"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var ErrNoFriends = errors.New("no friends :(")
@@ -32,9 +30,10 @@ type Storage interface {
 
 	AddNewAd(ad advertisement.Ad) error
 	DeleteAd(advert_id int) error
-	UpdateAdContent(content *tgbotapi.PhotoConfig, advert_id int) error
-	UpdateAdRatingAndViews(rating float32, seen int, advert_id int) error
+	UpdateAdContent(content []byte, description string, advert_id int) error
+	UpdateAdRatingAndViews(rating float32, seen int, rated int, advert_id int) error
 	GetAd(advert_id int) (advertisement.Ad, error)
 	GetAds() ([]advertisement.Ad, error)
 	GetAdsIds() ([]int, error)
+	IsAdExists(advert_id int) (bool, error)
 }

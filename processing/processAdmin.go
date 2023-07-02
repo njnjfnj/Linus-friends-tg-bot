@@ -35,7 +35,7 @@ getResponseLoop2:
 				case "0":
 					break getResponseLoop2
 				case "1":
-
+					// post adverts
 				case "2":
 					p.changeTimeReset(chat_id, updates)
 				case "3":
@@ -44,6 +44,10 @@ getResponseLoop2:
 						p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
 					}
 					p.bot.Send(tgbotapi.NewMessage(chat_id, strconv.Itoa(number)))
+				case "4":
+					p.ShowAds(chat_id, updates)
+				case "5":
+					p.addAdvert(chat_id, updates)
 				default:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "incorrect"))
 				}

@@ -4,7 +4,6 @@ import (
 	"LinusFriends/LinusUser"
 	"LinusFriends/libs/e"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,7 +17,7 @@ func (p *Processing) processCMDStart(chat_id int64, updates chan tgbotapi.Update
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSessionTimeEnded))
 	}()
 	check, err := p.db.IsUserExists(int(chat_id))
-	timer := time.NewTimer(20 * time.Second)
+	timer := time.NewTimer(30 * time.Minute)
 	if err != nil {
 		return e.Wrap("Can not chek if user exists", err)
 	}
@@ -67,7 +66,6 @@ getResponseLoop:
 					if upd.Message.Photo != nil {
 						if newUser.Image, err = p.processImage(chat_id, upd); err != nil {
 							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorCanNotUploadPhoto))
-							log.Println("Can not process a cmd: ", err)
 							continue
 						}
 

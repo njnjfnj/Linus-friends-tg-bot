@@ -86,11 +86,17 @@ func (p *Processing) resetTimer(timer *time.Timer) {
 	timer.Reset(time.Duration(p.timerResetDuration) * time.Minute)
 }
 
-func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, updates chan tgbotapi.Update, timer *time.Timer) (rating int, seen int) {
+func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, updates chan tgbotapi.Update, timer *time.Timer) (rating int) {
 	defer func() {
+		if rating != 0 {
+			totalRating := (MessageAdvert.Rate + float32(rating)) / (float32(MessageAdvert.Rated) + 1)
+			p.db.UpdateAdRatingAndViews(totalRating, MessageAdvert.Seen+1, MessageAdvert.Rated+1, MessageAdvert.Advert_id)
+		} else {
+			p.db.UpdateAdRatingAndViews(MessageAdvert.Rate, MessageAdvert.Seen+1, MessageAdvert.Rated, MessageAdvert.Advert_id)
+		}
 
 	}()
-	p.bot.Send(MessageAdvert.Content)
+	p.processAdvertMessage(chat_id, MessageAdvert)
 
 	var MessageErrorRating = "Enter a number from 0 to 5"
 
@@ -112,10 +118,8 @@ getRespondLoop1:
 					}
 
 					if bufRating == 0 {
-						seen++
 						break getRespondLoop1
 					} else if bufRating > 0 && bufRating < 6 {
-						seen++
 						rating = bufRating
 						break getRespondLoop1
 					} else {
@@ -130,5 +134,5 @@ getRespondLoop1:
 
 	MessageAdvert = &advertisement.Ad{}
 
-	return rating, seen
+	return rating
 }
