@@ -12,4 +12,11 @@ const MAMenu = `1 - post advertisement
 const MAAdvertMenu = `1 - Next
 2 - Previous
 3 - Change Advert
-0 - Stop`
+0 - Stop
+Post advert - post`
+
+const MAAdvertChangeMenu = `1 - Change description
+2 - Change Photo
+0 - exit & save
+
+Delete advertisement - Delete add`

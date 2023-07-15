@@ -16,7 +16,7 @@ type Processing struct {
 	adminPassword      string
 	adminChoice        string
 	timerResetDuration int
-	advert             chan advertisement.Ad
+	advert             *advertisement.Ad
 }
 
 func (p *Processing) CMD(cmd string, chat_id int64, updates chan tgbotapi.Update) (err error) {
@@ -33,14 +33,14 @@ func (p *Processing) CMD(cmd string, chat_id int64, updates chan tgbotapi.Update
 	return nil
 }
 
-func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPassword *string, adminChoice *string, adChan chan advertisement.Ad) *Processing {
+func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPassword string, adminChoice string, adChan chan advertisement.Ad) *Processing {
 	return &Processing{
 		bot:                botapi,
 		db:                 storage,
-		adminPassword:      *adminPassword,
-		adminChoice:        *adminChoice,
+		adminPassword:      adminPassword,
+		adminChoice:        adminChoice,
 		timerResetDuration: 30,
-		advert:             adChan,
+		advert:             nil, // тут 15 липня
 	}
 }
 
@@ -53,7 +53,7 @@ func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer
 		case MessageAdvert := <-p.advert:
 			p.showAd(chat_id, &MessageAdvert, updates, timer)
 		case upd := <-updates:
-			if upd.Message != nil { // upd.FromChat().ChatConfig().ChatID == chat_id &&
+			if upd.Message != nil {
 				p.resetTimer(timer)
 
 				user, err := p.db.GetUser(int(chat_id))
@@ -132,7 +132,7 @@ getRespondLoop1:
 		}
 	}
 
-	MessageAdvert = &advertisement.Ad{}
+	MessageAdvert = nil
 
 	return rating
 }

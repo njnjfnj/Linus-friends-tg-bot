@@ -26,7 +26,7 @@ func (p *Processing) showProfile(target_id int64, user LinusUser.User) {
 }
 
 func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
-	for {
+	for { // there are plenty of shitcode
 		p.showProfile(int64(user.ChatID), user)
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeProfile))
 		var check int8
@@ -56,8 +56,10 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 						case 4:
 							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeDescription))
 						case 5:
-							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeSkills))
-						case 6:
+							if p.showChangeSkillsMenu(chat_id, updates, &user, timer) {
+								return true
+							}
+						case 0:
 							p.db.UpdateUser(user)
 							return false
 						default:
@@ -87,18 +89,19 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 							}
 							user.Description = upd.Message.Text
 							check = -1
-						case 5:
-							if len(upd.Message.Text) > 200 {
-								p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum length - 200 characters"))
-								continue
-							}
+							// case 5:
+							// 	if len(upd.Message.Text) > 200 {
+							// 		p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum length - 200 characters"))
+							// 		continue
+							// 	}
 
-							// тут не изменяются скилы в бд
+							// 	// тут не изменяются скилы в бд
 
-							buf := strings.ToLower(upd.Message.Text)
+							// 	// buf := strings.ToLower(upd.Message.Text)
 
-							user.SkillsString = buf
-							check = -1
+							// 	// user.SkillsString = buf
+
+							// 	check = -1
 						}
 					} else if upd.Message.Photo != nil && check == 1 {
 						buf, err := p.processImage(chat_id, upd)
@@ -119,4 +122,50 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 			}
 		}
 	}
+}
+
+func (p *Processing) showChangeSkillsMenu(chat_id int64, updates chan tgbotapi.Update, user *LinusUser.User, timer *time.Timer) bool {
+	skills := strings.Split(user.SkillsString, " ")
+	index := 0
+	maxIndex := len(skills) - 1
+responseLoop1:
+	for {
+		p.bot.Send(tgbotapi.NewMessage(chat_id, skills[index]))
+		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeSkillsMenu))
+		select {
+		case <-timer.C:
+			return true
+		case upd := <-updates:
+			if upd.Message != nil && len(upd.Message.Text) != 0 {
+				p.resetTimer(timer)
+				switch upd.Message.Text {
+				case "0":
+					break responseLoop1
+				case "1":
+					if index == maxIndex {
+						index = 0
+						break
+					}
+					index++
+				case "2":
+					if index == 0 {
+						index = maxIndex
+						break
+					}
+					index--
+				case "3":
+					if err := p.db.DeleteSkill(int(chat_id), skills[index]); err != nil {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
+						break
+					}
+					user.SkillsString = strings.ReplaceAll(user.SkillsString, skills[index], "")
+				case "4":
+
+				default:
+					p.bot.Send(tgbotapi.NewMessage(chat_id, "enter number from 0 to 4"))
+				}
+			}
+		}
+	}
+	return false
 }

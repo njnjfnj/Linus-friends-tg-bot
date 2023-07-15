@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"LinusFriends/advertisement"
 	"LinusFriends/storage"
 	"strconv"
 	"strings"
@@ -10,6 +11,8 @@ import (
 )
 
 func (p *Processing) showMatches(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer) bool {
+	var advert *advertisement.Ad
+
 	matches, err := p.db.GetMatches(chat_id)
 	if len(matches) == 0 || err == storage.ErrNoFriends {
 		p.bot.Send(tgbotapi.NewMessage(chat_id, "No programmers there"))
@@ -41,6 +44,7 @@ getRespondLoop1:
 			select {
 			case <-timer.C:
 				return true
+			case *advert = <-p.advert:
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
 					p.resetTimer(timer)
@@ -60,7 +64,9 @@ getRespondLoop1:
 						matchesArr = matchesArr[1:]
 						break getRespondLoop2
 					case "4":
-
+						if advert != nil {
+							p.showAd(chat_id, advert, updates, timer)
+						}
 						break getRespondLoop1
 					default:
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
@@ -69,6 +75,9 @@ getRespondLoop1:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 				}
 			}
+		}
+		if advert != nil {
+			p.showAd(chat_id, advert, updates, timer)
 		}
 	}
 	var matchesLeft string

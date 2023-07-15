@@ -14,17 +14,17 @@ import (
 
 func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
 	for {
-		var bufAdvert advertisement.Ad
+		var advert *advertisement.Ad
 		countOfErrors, countOfHits := 0, 0
 		var searchingByWhat int
 	getRespondLoop1:
 		for {
 			p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSearchForProgrammersMenu))
 			select {
-			case bufAdvert = <-p.advert:
-				p.showAd(chat_id, &bufAdvert, updates, timer)
 			case <-timer.C:
 				return true
+			case *advert = <-p.advert:
+
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
 					p.resetTimer(timer)
@@ -48,6 +48,9 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
 				}
 			}
+		}
+		if advert != nil {
+			p.showAd(chat_id, advert, updates, timer)
 		}
 	getRespondLoop2:
 		for {
@@ -75,7 +78,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			getRespondLoop3:
 				for {
 					select {
-					case bufAdvert = <-p.advert:
+					case *advert = <-p.advert:
 
 					case <-timer.C:
 						return true
@@ -101,6 +104,9 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 							p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 						}
 					}
+				}
+				if advert != nil {
+					p.showAd(chat_id, advert, updates, timer)
 				}
 			} else {
 				p.bot.Send(tgbotapi.NewMessage(chat_id, "A new package of users that know the same programming languages as you has been taken"))
@@ -140,6 +146,8 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						select {
 						case <-timer.C:
 							return true
+						case *advert = <-p.advert:
+
 						case upd := <-updates:
 							if upd.Message != nil && len(upd.Message.Text) == 1 {
 								p.resetTimer(timer)
@@ -163,6 +171,9 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 							}
 						}
 					}
+					if advert != nil {
+						p.showAd(chat_id, advert, updates, timer)
+					}
 
 					idsArr = append(idsArr[:i], idsArr[i+1:]...)
 					l--
@@ -173,5 +184,8 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			}
 		}
 		searchingByWhat = -1
+		if advert != nil {
+			p.showAd(chat_id, advert, updates, timer)
+		}
 	}
 }

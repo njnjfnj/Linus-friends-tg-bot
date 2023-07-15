@@ -70,7 +70,7 @@ func main() {
 	// creating processing object
 	// cheking updates
 	updates := bot.GetUpdatesChan(u)
-	process := processing.NewProcessing(bot, db, adminPassword, adminChoice, make(chan advertisement.Ad))
+	process := processing.NewProcessing(bot, db, *adminPassword, *adminChoice, make(chan advertisement.Ad))
 	for upd := range updates {
 		go func(update tgbotapi.Update) {
 			if update.Message != nil {

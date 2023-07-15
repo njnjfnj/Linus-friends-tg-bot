@@ -24,7 +24,8 @@ const MessageChangeProfile = `1 - change profile photo
 3 - change experience
 4 - change description
 5 - change skills
-6 - save & exit`
+6 - add skill
+0 - save & exit`
 
 const MessageChangeName = "Tell me your name"
 const MessageChangeProfilePic = "Send me your beautiful photo of yourself"
@@ -40,3 +41,9 @@ const MessageSessionTimeEnded = `Session time out
 type \start to use LinusFriends bot`
 
 const MessageRateAdvert = `Rate this advertisement from 1 to 5 (if you want to skip this, enter 0)`
+
+const MessageChangeSkillsMenu = `1 - Next
+2 - Previous
+3 - Delete
+4 - Change
+0 - exit`

@@ -137,7 +137,7 @@ loop1:
 
 	responseLoop1:
 		for upd := range updates {
-			if len(upd.Message.Text) == 1 {
+			if len(upd.Message.Text) != 0 {
 				switch upd.Message.Text {
 				case "1":
 					if index == maxIndex {
@@ -154,9 +154,23 @@ loop1:
 					index--
 					break responseLoop1
 				case "3":
-					// change advert
+					if p.showChangeAddMenu(chat_id, updates, advert) { // if add has been deleted
+						if len(adverts) == 1 {
+							return
+						} else if index == maxIndex && len(adverts) > 1 {
+							index--
+						} else {
+							index++
+						}
+						adverts = append(adverts[:index], adverts[:index+1]...)
+					}
+					break responseLoop1
 				case "0":
 					break loop1
+				case "Post advert":
+					p.advert <- advert
+					p.bot.Send(tgbotapi.NewMessage(chat_id, "All right!"))
+					p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertMenu))
 				default:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "error"))
 					p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertMenu))
@@ -165,4 +179,58 @@ loop1:
 			}
 		}
 	}
+}
+
+func (p *Processing) showChangeAddMenu(chat_id int64, updates chan tgbotapi.Update, ad advertisement.Ad) bool {
+	p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertChangeMenu))
+Loop1:
+	for upd := range updates {
+		if len(upd.Message.Text) != 0 {
+			switch upd.Message.Text {
+			case "0":
+				if err := p.db.UpdateAdContent(ad.Content, ad.Description, ad.Advert_id); err != nil {
+					p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
+				}
+				break Loop1
+			case "1":
+				p.bot.Send(tgbotapi.NewMessage(chat_id, "Send new descriprion (type c to cancel)"))
+			loop2:
+				for upd := range updates {
+					if len(upd.Message.Text) != 0 {
+						if upd.Message.Text == "c" {
+							break loop2
+						}
+						ad.Description = upd.Message.Text
+						break loop2
+					}
+				}
+				p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertChangeMenu))
+			case "2":
+				p.bot.Send(tgbotapi.NewMessage(chat_id, "Send new photo (type c to cancel)"))
+			loop3:
+				for upd := range updates {
+					if len(upd.Message.Text) != 0 && upd.Message.Text == "c" {
+						break loop3
+					}
+					if upd.Message.Photo != nil {
+						buf, err := p.processImage(chat_id, upd)
+						if err != nil {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageErrorCanNotUploadPhoto))
+							continue loop3
+						}
+						ad.Content = buf
+						break loop3
+					}
+				}
+				p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertChangeMenu))
+			case "Delete advertisement":
+				p.db.DeleteAd(ad.Advert_id)
+				return true
+			default:
+				p.bot.Send(tgbotapi.NewMessage(chat_id, "error"))
+				p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertChangeMenu))
+			}
+		}
+	}
+	return false
 }
