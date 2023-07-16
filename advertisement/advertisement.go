@@ -6,5 +6,5 @@ type Ad struct {
 	Description string
 	Seen        int
 	Rated       int
-	Rate        float32
+	Rate        int
 }

@@ -32,7 +32,7 @@ type Storage interface {
 	AddNewAd(ad advertisement.Ad) error
 	DeleteAd(advert_id int) error
 	UpdateAdContent(content []byte, description string, advert_id int) error
-	UpdateAdRatingAndViews(rating float32, seen int, rated int, advert_id int) error
+	UpdateAdRatingAndViews(rating int, seen int, rated int, advert_id int) error
 	GetAd(advert_id int) (advertisement.Ad, error)
 	GetAds() ([]advertisement.Ad, error)
 	GetAdsIds() ([]int, error)

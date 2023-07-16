@@ -23,7 +23,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			select {
 			case <-timer.C:
 				return true
-			case *advert = <-p.advert:
+			//case *advert = <-p.advert:
 
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
@@ -78,7 +78,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			getRespondLoop3:
 				for {
 					select {
-					case *advert = <-p.advert:
+					//case *advert = <-p.advert:
 
 					case <-timer.C:
 						return true
@@ -146,7 +146,7 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						select {
 						case <-timer.C:
 							return true
-						case *advert = <-p.advert:
+						//case *advert = <-p.advert:
 
 						case upd := <-updates:
 							if upd.Message != nil && len(upd.Message.Text) == 1 {

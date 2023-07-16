@@ -44,7 +44,7 @@ getRespondLoop1:
 			select {
 			case <-timer.C:
 				return true
-			case *advert = <-p.advert:
+			//case *advert = <-p.advert:
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
 					p.resetTimer(timer)

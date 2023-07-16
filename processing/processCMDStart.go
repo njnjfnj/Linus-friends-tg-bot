@@ -17,12 +17,13 @@ func (p *Processing) processCMDStart(chat_id int64, updates chan tgbotapi.Update
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageSessionTimeEnded))
 	}()
 	check, err := p.db.IsUserExists(int(chat_id))
-	timer := time.NewTimer(30 * time.Minute)
+	timer := time.NewTimer(time.Duration(p.timerResetDuration) * time.Minute)
+	advertTimer := time.NewTimer(time.Duration(p.advertTimerResetDuration) * time.Minute)
 	if err != nil {
 		return e.Wrap("Can not chek if user exists", err)
 	}
 	if check {
-		p.showMenu(chat_id, updates, timer)
+		p.showMenu(chat_id, updates, timer, advertTimer)
 		return nil
 	}
 	p.bot.Send(tgbotapi.NewMessage(chat_id, MessageStart+"\n\n"+MessageChangeName))
@@ -114,7 +115,7 @@ getResponseLoop:
 		return err
 	}
 
-	p.showMenu(chat_id, updates, timer)
+	p.showMenu(chat_id, updates, timer, advertTimer)
 	return nil
 }
 

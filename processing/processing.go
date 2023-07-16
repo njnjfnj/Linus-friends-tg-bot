@@ -11,12 +11,13 @@ import (
 )
 
 type Processing struct {
-	bot                *tgbotapi.BotAPI
-	db                 storage.Storage
-	adminPassword      string
-	adminChoice        string
-	timerResetDuration int
-	advert             *advertisement.Ad
+	bot                      *tgbotapi.BotAPI
+	db                       storage.Storage
+	adminPassword            string
+	adminChoice              string
+	timerResetDuration       int
+	advertTimerResetDuration int
+	advert                   *advertisement.Ad
 }
 
 func (p *Processing) CMD(cmd string, chat_id int64, updates chan tgbotapi.Update) (err error) {
@@ -35,23 +36,27 @@ func (p *Processing) CMD(cmd string, chat_id int64, updates chan tgbotapi.Update
 
 func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPassword string, adminChoice string, adChan chan advertisement.Ad) *Processing {
 	return &Processing{
-		bot:                botapi,
-		db:                 storage,
-		adminPassword:      adminPassword,
-		adminChoice:        adminChoice,
-		timerResetDuration: 30,
-		advert:             nil, // тут 15 липня
+		bot:                      botapi,
+		db:                       storage,
+		adminPassword:            adminPassword,
+		adminChoice:              adminChoice,
+		timerResetDuration:       30,
+		advertTimerResetDuration: 1,
+		advert:                   nil,
 	}
 }
 
-func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer) {
+func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer, advertTimer *time.Timer) {
 	for {
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
 		select {
 		case <-timer.C:
 			return
-		case MessageAdvert := <-p.advert:
-			p.showAd(chat_id, &MessageAdvert, updates, timer)
+		case <-advertTimer.C:
+			if p.advert != nil {
+				p.showAd(chat_id, p.advert, updates, timer)
+			}
+			p.resetAdvertTimer(advertTimer)
 		case upd := <-updates:
 			if upd.Message != nil {
 				p.resetTimer(timer)
@@ -63,7 +68,7 @@ func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer
 				}
 				switch upd.Message.Text {
 				case "1":
-					if p.searchForProgrammers(chat_id, updates, user, timer) {
+					if p.searchForProgrammers(chat_id, updates, user, timer) { // , advertTimer
 						return
 					}
 				case "2":
@@ -86,15 +91,18 @@ func (p *Processing) resetTimer(timer *time.Timer) {
 	timer.Reset(time.Duration(p.timerResetDuration) * time.Minute)
 }
 
+func (p *Processing) resetAdvertTimer(timer *time.Timer) {
+	timer.Reset(time.Duration(p.advertTimerResetDuration) * time.Minute)
+}
+
 func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, updates chan tgbotapi.Update, timer *time.Timer) (rating int) {
 	defer func() {
 		if rating != 0 {
-			totalRating := (MessageAdvert.Rate + float32(rating)) / (float32(MessageAdvert.Rated) + 1)
-			p.db.UpdateAdRatingAndViews(totalRating, MessageAdvert.Seen+1, MessageAdvert.Rated+1, MessageAdvert.Advert_id)
-		} else {
-			p.db.UpdateAdRatingAndViews(MessageAdvert.Rate, MessageAdvert.Seen+1, MessageAdvert.Rated, MessageAdvert.Advert_id)
+			MessageAdvert.Rate += rating
+			MessageAdvert.Rated++
 		}
-
+		MessageAdvert.Seen++
+		p.db.UpdateAdRatingAndViews(MessageAdvert.Rate, MessageAdvert.Seen, MessageAdvert.Rated, MessageAdvert.Advert_id)
 	}()
 	p.processAdvertMessage(chat_id, MessageAdvert)
 
@@ -102,7 +110,7 @@ func (p *Processing) showAd(chat_id int64, MessageAdvert *advertisement.Ad, upda
 
 getRespondLoop1:
 	for {
-		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
+		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageRateAdvert))
 		select {
 		case <-timer.C:
 			return
@@ -131,8 +139,6 @@ getRespondLoop1:
 			}
 		}
 	}
-
-	MessageAdvert = nil
 
 	return rating
 }

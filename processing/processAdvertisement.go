@@ -71,8 +71,8 @@ forLoop1:
 
 					res.Advert_id = bufId
 					res.Rate = 3
-					res.Rated = 0
-					res.Seen = 0
+					res.Rated = 1
+					res.Seen = 1
 					p.processAdvertMessage(chat_id, &res)
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "1 - confirm advert\n2 - discard new advert"))
 					position++
@@ -168,7 +168,7 @@ loop1:
 				case "0":
 					break loop1
 				case "Post advert":
-					p.advert <- advert
+					p.advert = &advert
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "All right!"))
 					p.bot.Send(tgbotapi.NewMessage(chat_id, MAAdvertMenu))
 				default:

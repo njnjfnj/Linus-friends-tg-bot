@@ -54,7 +54,7 @@ func (d *Database) UpdateAdContent(content []byte, description string, advert_id
 	return nil
 }
 
-func (d *Database) UpdateAdRatingAndViews(rating float32, seen int, rated int, advert_id int) error {
+func (d *Database) UpdateAdRatingAndViews(rating int, seen int, rated int, advert_id int) error {
 	q := `UPDATE ads SET rating = ?, seen = ?, rated = ? WHERE advert_id = ?`
 	if _, err := d.db.ExecContext(d.cntxt, q, rating, seen, rated, advert_id); err != nil {
 		return e.Wrap("can not update rating and views of advert", err)
