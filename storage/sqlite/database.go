@@ -218,7 +218,6 @@ func (d *Database) UserCount() (int, error) {
 }
 
 func (d *Database) DeleteSkill(chat_id int, skill string) error {
-	//q := `SELECT IDs FROM skls WHERE language = ?`
 	q := `UPDATE skls SET IDs = REPLACE(IDs, " " + ?, "") WHERE language = ?`
 
 	if _, err := d.db.ExecContext(d.cntxt, q, strconv.Itoa(chat_id), skill); err != nil {

@@ -41,7 +41,7 @@ func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPasswo
 		adminPassword:            adminPassword,
 		adminChoice:              adminChoice,
 		timerResetDuration:       30,
-		advertTimerResetDuration: 1,
+		advertTimerResetDuration: 5,
 		advert:                   nil,
 	}
 }

@@ -141,6 +141,10 @@ func (p *Processing) showChangeSkillsMenu(chat_id int64, updates chan tgbotapi.U
 	maxIndex := len(skills) - 1
 responseLoop1:
 	for {
+		if skills[index] == " " {
+			skills = append(skills[:index], skills[:index+1]...)
+			continue
+		}
 		p.bot.Send(tgbotapi.NewMessage(chat_id, skills[index]))
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeSkillsMenu))
 		select {
@@ -169,11 +173,19 @@ responseLoop1:
 					}
 					index--
 				case "3":
+					if maxIndex == 0 {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "You must have at least 1 skill"))
+						break
+					}
+
 					if err := p.db.DeleteSkill(int(chat_id), skills[index]); err != nil {
 						p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
 						break
 					}
+
 					user.SkillsString = strings.ReplaceAll(user.SkillsString, skills[index], "")
+					skills = append(skills[:index], skills[:index+1]...)
+					p.db.UpdateUser(*user)
 				case "4":
 
 				default:
