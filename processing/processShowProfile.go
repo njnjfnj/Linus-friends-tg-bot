@@ -25,8 +25,9 @@ func (p *Processing) showProfile(target_id int64, user LinusUser.User) {
 	}
 }
 
-func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
+func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer, advertTimer *time.Timer) bool {
 	for { // there are plenty of shitcode
+		isAdvertTimer := false
 		p.showProfile(int64(user.ChatID), user)
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeProfile))
 		var check int8
@@ -36,6 +37,10 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 			select {
 			case <-timer.C:
 				return true
+			case <-advertTimer.C:
+				if p.advert != nil {
+					isAdvertTimer = true
+				}
 			case upd := <-updates:
 				if upd.Message != nil {
 					p.resetTimer(timer)
@@ -56,7 +61,7 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 						case 4:
 							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeDescription))
 						case 5:
-							if p.showChangeSkillsMenu(chat_id, updates, &user, timer) {
+							if p.showChangeSkillsMenu(chat_id, updates, &user, timer, advertTimer) {
 								return true
 							}
 						case 0:
@@ -114,6 +119,11 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 					} else {
 						p.bot.Send(tgbotapi.NewMessage(chat_id, "ERROR"))
 					}
+					if isAdvertTimer {
+						p.showAd(chat_id, p.advert, updates, timer)
+						p.resetAdvertTimer(advertTimer)
+						isAdvertTimer = false
+					}
 				}
 				if check == -1 {
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "Successfull local change!!!"))
@@ -124,7 +134,8 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 	}
 }
 
-func (p *Processing) showChangeSkillsMenu(chat_id int64, updates chan tgbotapi.Update, user *LinusUser.User, timer *time.Timer) bool {
+func (p *Processing) showChangeSkillsMenu(chat_id int64, updates chan tgbotapi.Update, user *LinusUser.User, timer *time.Timer, advertTimer *time.Timer) bool {
+	isAdvertTimer := false
 	skills := strings.Split(user.SkillsString, " ")
 	index := 0
 	maxIndex := len(skills) - 1
@@ -135,6 +146,10 @@ responseLoop1:
 		select {
 		case <-timer.C:
 			return true
+		case <-advertTimer.C:
+			if p.advert != nil {
+				isAdvertTimer = true
+			}
 		case upd := <-updates:
 			if upd.Message != nil && len(upd.Message.Text) != 0 {
 				p.resetTimer(timer)
@@ -163,6 +178,11 @@ responseLoop1:
 
 				default:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "enter number from 0 to 4"))
+				}
+				if isAdvertTimer {
+					p.showAd(chat_id, p.advert, updates, timer)
+					p.resetAdvertTimer(advertTimer)
+					isAdvertTimer = false
 				}
 			}
 		}

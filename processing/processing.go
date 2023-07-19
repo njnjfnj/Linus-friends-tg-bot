@@ -68,15 +68,15 @@ func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer
 				}
 				switch upd.Message.Text {
 				case "1":
-					if p.searchForProgrammers(chat_id, updates, user, timer) { // , advertTimer
+					if p.searchForProgrammers(chat_id, updates, user, timer, advertTimer) {
 						return
 					}
 				case "2":
-					if p.showProfileMenu(chat_id, updates, user, timer) {
+					if p.showProfileMenu(chat_id, updates, user, timer, advertTimer) {
 						return
 					}
 				case "3":
-					if p.showMatches(chat_id, updates, timer) {
+					if p.showMatches(chat_id, updates, timer, advertTimer) {
 						return
 					}
 				case p.adminChoice:

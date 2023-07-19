@@ -1,7 +1,6 @@
 package processing
 
 import (
-	"LinusFriends/advertisement"
 	"LinusFriends/storage"
 	"strconv"
 	"strings"
@@ -10,8 +9,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (p *Processing) showMatches(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer) bool {
-	var advert *advertisement.Ad
+func (p *Processing) showMatches(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer, advertTimer *time.Timer) bool {
+	isAdvertTimer := false
 
 	matches, err := p.db.GetMatches(chat_id)
 	if len(matches) == 0 || err == storage.ErrNoFriends {
@@ -44,7 +43,10 @@ getRespondLoop1:
 			select {
 			case <-timer.C:
 				return true
-			//case *advert = <-p.advert:
+			case <-advertTimer.C:
+				if p.advert != nil {
+					isAdvertTimer = true
+				}
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
 					p.resetTimer(timer)
@@ -64,8 +66,10 @@ getRespondLoop1:
 						matchesArr = matchesArr[1:]
 						break getRespondLoop2
 					case "4":
-						if advert != nil {
-							p.showAd(chat_id, advert, updates, timer)
+						if isAdvertTimer {
+							p.showAd(chat_id, p.advert, updates, timer)
+							p.resetAdvertTimer(advertTimer)
+							isAdvertTimer = false
 						}
 						break getRespondLoop1
 					default:
@@ -76,8 +80,10 @@ getRespondLoop1:
 				}
 			}
 		}
-		if advert != nil {
-			p.showAd(chat_id, advert, updates, timer)
+		if isAdvertTimer {
+			p.showAd(chat_id, p.advert, updates, timer)
+			p.resetAdvertTimer(advertTimer)
+			isAdvertTimer = false
 		}
 	}
 	var matchesLeft string

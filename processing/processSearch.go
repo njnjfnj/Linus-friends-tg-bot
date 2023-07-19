@@ -2,7 +2,6 @@ package processing
 
 import (
 	"LinusFriends/LinusUser"
-	"LinusFriends/advertisement"
 	"LinusFriends/storage"
 	"math/rand"
 	"strconv"
@@ -12,9 +11,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer) bool {
+func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer, advertTimer *time.Timer) bool {
+	isAdvertTimer := false
 	for {
-		var advert *advertisement.Ad
 		countOfErrors, countOfHits := 0, 0
 		var searchingByWhat int
 	getRespondLoop1:
@@ -23,7 +22,10 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			select {
 			case <-timer.C:
 				return true
-			//case *advert = <-p.advert:
+			case <-advertTimer.C:
+				if p.advert != nil {
+					isAdvertTimer = true
+				}
 
 			case upd := <-updates:
 				if upd.Message != nil && len(upd.Message.Text) == 1 {
@@ -47,10 +49,12 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 				} else {
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 4]!!!! 🤬🤬"))
 				}
+				if isAdvertTimer {
+					p.showAd(chat_id, p.advert, updates, timer)
+					p.resetAdvertTimer(advertTimer)
+					isAdvertTimer = false
+				}
 			}
-		}
-		if advert != nil {
-			p.showAd(chat_id, advert, updates, timer)
 		}
 	getRespondLoop2:
 		for {
@@ -78,8 +82,10 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			getRespondLoop3:
 				for {
 					select {
-					//case *advert = <-p.advert:
-
+					case <-advertTimer.C:
+						if p.advert != nil {
+							isAdvertTimer = true
+						}
 					case <-timer.C:
 						return true
 					case upd := <-updates:
@@ -103,10 +109,12 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						} else {
 							p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 						}
+						if isAdvertTimer {
+							p.showAd(chat_id, p.advert, updates, timer)
+							p.resetAdvertTimer(advertTimer)
+							isAdvertTimer = false
+						}
 					}
-				}
-				if advert != nil {
-					p.showAd(chat_id, advert, updates, timer)
 				}
 			} else {
 				p.bot.Send(tgbotapi.NewMessage(chat_id, "A new package of users that know the same programming languages as you has been taken"))
@@ -146,8 +154,10 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 						select {
 						case <-timer.C:
 							return true
-						//case *advert = <-p.advert:
-
+						case <-advertTimer.C:
+							if p.advert != nil {
+								isAdvertTimer = true
+							}
 						case upd := <-updates:
 							if upd.Message != nil && len(upd.Message.Text) == 1 {
 								p.resetTimer(timer)
@@ -169,10 +179,12 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 							} else {
 								p.bot.Send(tgbotapi.NewMessage(chat_id, "∈[1, 2]U[4, 4]!!!! 🤬🤬"))
 							}
+							if isAdvertTimer {
+								p.showAd(chat_id, p.advert, updates, timer)
+								p.resetAdvertTimer(advertTimer)
+								isAdvertTimer = false
+							}
 						}
-					}
-					if advert != nil {
-						p.showAd(chat_id, advert, updates, timer)
 					}
 
 					idsArr = append(idsArr[:i], idsArr[i+1:]...)
@@ -184,8 +196,5 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 			}
 		}
 		searchingByWhat = -1
-		if advert != nil {
-			p.showAd(chat_id, advert, updates, timer)
-		}
 	}
 }
