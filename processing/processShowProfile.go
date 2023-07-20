@@ -26,7 +26,7 @@ func (p *Processing) showProfile(target_id int64, user LinusUser.User) {
 }
 
 func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update, user LinusUser.User, timer *time.Timer, advertTimer *time.Timer) bool {
-	for { // there are plenty of shitcode
+	for {
 		isAdvertTimer := false
 		p.showProfile(int64(user.ChatID), user)
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageChangeProfile))
@@ -64,11 +64,13 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 							if p.showChangeSkillsMenu(chat_id, updates, &user, timer, advertTimer) {
 								return true
 							}
+						case 6:
+							p.bot.Send(tgbotapi.NewMessage(chat_id, MessageAddSkill))
 						case 0:
 							p.db.UpdateUser(user)
 							return false
 						default:
-							p.bot.Send(tgbotapi.NewMessage(chat_id, "[1, 6]!!!! 🤬🤬"))
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "[1, 6]!!!!"))
 						}
 					} else if len(upd.Message.Text) != 0 {
 						switch check {
@@ -82,7 +84,7 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 						case 3:
 							buf, err := strconv.Atoi(upd.Message.Text)
 							if err != nil {
-								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!! 🤬🤬"))
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "It is not a number!!s"))
 								continue
 							}
 							user.YearsOfProgramming = buf
@@ -94,20 +96,17 @@ func (p *Processing) showProfileMenu(chat_id int64, updates chan tgbotapi.Update
 							}
 							user.Description = upd.Message.Text
 							check = -1
-							// case 5:
-							// 	if len(upd.Message.Text) > 200 {
-							// 		p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum length - 200 characters"))
-							// 		continue
-							// 	}
+						case 6:
+							if len(upd.Message.Text) > 80 {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "Maximum skill lenght is 80 symbols"))
+								continue
+							}
 
-							// 	// тут не изменяются скилы в бд
-
-							// 	// buf := strings.ToLower(upd.Message.Text)
-
-							// 	// user.SkillsString = buf
-
-							// 	check = -1
+							if err := p.db.AddSkill(int(chat_id), upd.Message.Text); err != nil {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
+							}
 						}
+
 					} else if upd.Message.Photo != nil && check == 1 {
 						buf, err := p.processImage(chat_id, upd)
 						if err != nil {
@@ -183,9 +182,14 @@ responseLoop1:
 						break
 					}
 
-					user.SkillsString = strings.ReplaceAll(user.SkillsString, skills[index], "")
 					skills = append(skills[:index], skills[:index+1]...)
-					p.db.UpdateUser(*user)
+					for _, i := range skills {
+						user.SkillsString += i + " "
+					}
+					if err := p.db.UpdateUser(*user); err != nil {
+						p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
+						break
+					}
 				case "4":
 
 				default:

@@ -24,6 +24,7 @@ type Storage interface {
 	UpdateUser(u LinusUser.User) error
 	GetRandomUserForUser(chat_id int64, SearchingByWhat int, user LinusUser.User) (LinusUser.User, string, error)
 	DeleteSkill(chat_id int, skill string) error
+	AddSkill(chat_id int, skill string) error
 
 	AddMatch(chat_id int64, user LinusUser.User) error
 	GetMatches(chat_id int64) (string, error)

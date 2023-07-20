@@ -226,3 +226,13 @@ func (d *Database) DeleteSkill(chat_id int, skill string) error {
 
 	return nil
 }
+
+func (d *Database) AddSkill(chat_id int, skill string) error {
+	q := `UPDATE skls SET IDs = IDs || ' ' || ? WHERE language = ?`
+
+	if _, err := d.db.ExecContext(d.cntxt, q, strconv.Itoa(chat_id), skill); err != nil {
+		return e.Wrap("can not add skill", err)
+	}
+
+	return nil
+}

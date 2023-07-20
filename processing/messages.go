@@ -33,6 +33,8 @@ const MessageChangeDescription = "Send me the text of your future profile"
 const MessageChangeSkills = `Send me a list of technologies you know (for example "C++ Qt Golang" to Split() this string and use it when searching)`
 const MessageChangeYearsPfProgramming = "How many years have you been programming? (This information is not going to update automatically)"
 
+const MessageAddSkill = "Send me a name of your new skill"
+
 const MessageHelpCancel = `(To cancel type 'c')`
 
 const MessageErrorCanNotUploadPhoto = "The bot can not upload your photo. Please make sure your photo does not have any problems, or try again later."
