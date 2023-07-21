@@ -228,10 +228,19 @@ func (d *Database) DeleteSkill(chat_id int, skill string) error {
 }
 
 func (d *Database) AddSkill(chat_id int, skill string) error {
-	q := `UPDATE skls SET IDs = IDs || ' ' || ? WHERE language = ?`
+	q1 := `SELECT COUNT(*) FROM skls WHERE language = ?`
+	q2 := `UPDATE skls SET IDs = IDs || ' ' || ? WHERE language = ?`
+	q3 := `INSERT INTO skls (language, IDs) VALUES(?, ?)`
 
-	if _, err := d.db.ExecContext(d.cntxt, q, strconv.Itoa(chat_id), skill); err != nil {
-		return e.Wrap("can not add skill", err)
+	var res int
+	if err := d.db.QueryRowContext(d.cntxt, q1, skill).Scan(&res); err != nil {
+		return e.Wrap("Can not check if language exists", err)
+	} else if res > 0 {
+		if _, err := d.db.ExecContext(d.cntxt, q2, chat_id, skill); err != nil {
+			return e.Wrap("Can not update skills IDs", err)
+		}
+	} else if _, err := d.db.ExecContext(d.cntxt, q3, skill, chat_id); err != nil {
+		return e.Wrap("Can not add new language", err)
 	}
 
 	return nil

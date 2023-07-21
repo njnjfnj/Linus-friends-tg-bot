@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// creating db
-	db, err := Database.NewDatabase("db/storage1.db")
+	db, err := Database.NewDatabase("db/storage.db")
 	if err != nil {
 		log.Fatal("Can not make a db: ", err)
 	}
