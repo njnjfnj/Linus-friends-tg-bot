@@ -141,8 +141,13 @@ func (p *Processing) showChangeSkillsMenu(chat_id int64, updates chan tgbotapi.U
 	maxIndex := len(skills) - 1
 responseLoop1:
 	for {
-		if skills[index] == " " {
-			skills = append(skills[:index], skills[:index+1]...)
+		if skills[index] == "" {
+			skills = append(skills[:index], skills[index+1:]...)
+			maxIndex--
+
+			if index != 0 {
+				index--
+			}
 			continue
 		}
 		p.bot.Send(tgbotapi.NewMessage(chat_id, skills[index]))
@@ -174,7 +179,7 @@ responseLoop1:
 					index--
 				case "3":
 					if maxIndex == 0 {
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "You must have at least 1 skill"))
+						p.bot.Send(tgbotapi.NewMessage(chat_id, "You must have at least 1 skill!!!"))
 						break
 					}
 
@@ -183,7 +188,8 @@ responseLoop1:
 						break
 					}
 
-					skills = append(skills[:index], skills[:index+1]...)
+					skills = append(skills[:index], skills[index+1:]...)
+					user.SkillsString = ""
 					for _, i := range skills {
 						user.SkillsString += " " + i
 					}
@@ -191,8 +197,12 @@ responseLoop1:
 						p.bot.Send(tgbotapi.NewMessage(chat_id, err.Error()))
 						break
 					}
-				case "4":
 
+					maxIndex--
+
+					if index != 0 {
+						index--
+					}
 				default:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "enter number from 0 to 4"))
 				}
