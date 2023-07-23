@@ -203,8 +203,6 @@ responseLoop1:
 					if index != 0 {
 						index--
 					}
-
-					// test commit
 				default:
 					p.bot.Send(tgbotapi.NewMessage(chat_id, "enter number from 0 to 4"))
 				}

@@ -46,6 +46,7 @@ const MessageRateAdvert = `Rate this advertisement from 1 to 5 (if you want to s
 
 const MessageChangeSkillsMenu = `1 - Next
 2 - Previous
-3 - Delete
-4 - Change
+3 - Delete	
 0 - exit`
+
+const MessageYouMatched = "Match! Check '3 - Show programmers that liked you'\n(Your next message will belong to the previous message of the bot)"

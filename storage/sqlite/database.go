@@ -192,7 +192,7 @@ func (d *Database) GetMatches(chat_id int64) (res string, err error) {
 }
 
 func (d *Database) SetMatches(chat_id int64, matchesLeft string) error {
-	q := `UPDATE mtchs SET chat_id = ?, IDs = ?`
+	q := `UPDATE mtchs SET IDs = ? WHERE chat_id = ?`
 	if _, err := d.db.ExecContext(d.cntxt, q, chat_id, matchesLeft); err != nil {
 		return e.Wrap("Can not set matches", err)
 	}

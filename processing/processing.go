@@ -5,6 +5,7 @@ import (
 	"LinusFriends/libs/e"
 	"LinusFriends/storage"
 	"strconv"
+	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -47,6 +48,19 @@ func NewProcessing(botapi *tgbotapi.BotAPI, storage storage.Storage, adminPasswo
 }
 
 func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer *time.Timer, advertTimer *time.Timer) {
+	user, err := p.db.GetUser(int(chat_id))
+	if err != nil {
+		p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not get user, try again later\n"+err.Error()))
+		return
+	}
+
+	matches, err := p.db.GetMatches(chat_id)
+	if err != nil {
+		p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not get matches"))
+	}
+
+	p.bot.Send(tgbotapi.NewMessage(chat_id, "You have been matched by "+strconv.Itoa(len(strings.Split(matches, " "))-1)+" users"))
+
 	for {
 		p.bot.Send(tgbotapi.NewMessage(chat_id, MessageShowMenu))
 		select {
@@ -61,11 +75,6 @@ func (p *Processing) showMenu(chat_id int64, updates chan tgbotapi.Update, timer
 			if upd.Message != nil {
 				p.resetTimer(timer)
 
-				user, err := p.db.GetUser(int(chat_id))
-				if err != nil {
-					p.bot.Send(tgbotapi.NewMessage(chat_id, "Can not get user"+err.Error()))
-					continue
-				}
 				switch upd.Message.Text {
 				case "1":
 					if p.searchForProgrammers(chat_id, updates, user, timer, advertTimer) {
