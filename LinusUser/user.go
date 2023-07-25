@@ -7,8 +7,6 @@ type User struct {
 	SkillsString       string
 	YearsOfProgramming int
 	Image              []byte
-
-	UserSeen map[int]bool
 }
 
 // const (

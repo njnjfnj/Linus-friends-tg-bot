@@ -56,7 +56,6 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 				}
 			}
 		}
-		user.UserSeen = make(map[int]bool)
 	getRespondLoop2:
 		for {
 			friend, ids, err := p.db.GetRandomUserForUser(chat_id, searchingByWhat, user)
@@ -78,20 +77,6 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 				}
 			}
 			if ids == "" {
-				// if user.UserSeen[friend.ChatID] {
-				// 	count, err := p.db.UserCount()
-				// 	if err != nil {
-				// 		p.bot.Send(tgbotapi.NewMessage(chat_id, "Sorry, something wrong with bot, try again later"))
-				// 		break getRespondLoop2
-				// 	}
-				// 	if len(friend.UserSeen) == count {
-				// 		break getRespondLoop2
-				// 	}
-				// 	fmt.Print("\n\n\n\n\n")
-				// 	fmt.Println(len(friend.UserSeen), count)
-				// 	fmt.Print("\n\n\n\n\n")
-				// 	continue
-				// }
 				p.showProfile(chat_id, friend)
 				p.bot.Send(tgbotapi.NewMessage(chat_id, MessageIntaractionWithFriend))
 			getRespondLoop3:
@@ -109,11 +94,9 @@ func (p *Processing) searchForProgrammers(chat_id int64, updates chan tgbotapi.U
 
 							switch upd.Message.Text {
 							case "1":
-								p.match(friend, user)
-								user.UserSeen[friend.ChatID] = true
+								p.match(user, friend) // friend, user
 								break getRespondLoop3
 							case "2":
-								user.UserSeen[friend.ChatID] = true
 								break getRespondLoop3
 							case "4":
 								break getRespondLoop2

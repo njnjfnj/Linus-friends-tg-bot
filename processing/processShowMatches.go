@@ -59,7 +59,24 @@ getRespondLoop1:
 						if err != nil {
 							p.bot.Send(tgbotapi.NewMessage(chat_id, "Something wrong with telegram, sorry("))
 						}
-						p.bot.Send(tgbotapi.NewMessage(chat_id, "@"+chat.UserName))
+
+						if chat.UserName != "" {
+							p.bot.Send(tgbotapi.NewMessage(chat_id, "@"+chat.UserName))
+						} else {
+							var ChatInfoConf tgbotapi.ChatInfoConfig
+							ChatInfoConf.ChatID = int64(chat_id)
+							chat2, err := p.bot.GetChat(ChatInfoConf)
+							if err != nil {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "Something wrong with telegram, sorry("))
+							}
+							if chat2.UserName != "" {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "The bot will send to this user your username, because this user does not have a username"))
+								p.bot.Send(tgbotapi.NewMessage(int64(user.ChatID), "This user has matched you back --> @"+chat2.UserName))
+							} else {
+								p.bot.Send(tgbotapi.NewMessage(chat_id, "")) // надо эту штуку доделать
+							}
+						}
+
 						matchesArr = matchesArr[1:]
 						break getRespondLoop2
 					case "2":
